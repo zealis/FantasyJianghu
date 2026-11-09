@@ -1,0 +1,277 @@
+{
+  "daily_limits": {
+    "normal": 50,
+    "sect": 20,
+    "dungeon": 10
+  },
+  "quests": [
+    {
+      "id": "main_001",
+      "name": "归村",
+      "type": "main",
+      "chapter": 1,
+      "giver": {
+        "map_id": "清河村",
+        "npc_id": "hebo"
+      },
+      "min_level": 1,
+      "prev": "",
+      "desc": "闭关归来，村口已非旧日模样。先向何伯问清村中近况。",
+      "objectives": [
+        {
+          "kind": "talk",
+          "target": "hebo",
+          "count": 1
+        }
+      ],
+      "rewards": {
+        "exp": 120,
+        "xiuwei": 20,
+        "gold": 500,
+        "items": [
+          {
+            "id": "pill_xiaohuan",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "main_002",
+      "name": "拜见教头",
+      "type": "main",
+      "chapter": 1,
+      "giver": {
+        "map_id": "清河村",
+        "npc_id": "tieshan"
+      },
+      "min_level": 1,
+      "prev": "main_001",
+      "desc": "何伯让你去寻教头·铁山，他或许知道村中惨祸的来路。",
+      "objectives": [
+        {
+          "kind": "talk",
+          "target": "tieshan",
+          "count": 1
+        }
+      ],
+      "rewards": {
+        "exp": 180,
+        "xiuwei": 30,
+        "gold": 600,
+        "items": [
+          {
+            "id": "stone_qianghua",
+            "count": 3
+          }
+        ]
+      }
+    },
+    {
+      "id": "main_003",
+      "name": "试手木桩",
+      "type": "main",
+      "chapter": 1,
+      "giver": {
+        "map_id": "清河村",
+        "npc_id": "tieshan"
+      },
+      "min_level": 1,
+      "prev": "main_002",
+      "desc": "教头要先看你手上功夫。与他切磋木桩人，胜一场再谈别的。",
+      "objectives": [
+        {
+          "kind": "kill",
+          "target": "muzhuang",
+          "count": 1
+        }
+      ],
+      "rewards": {
+        "exp": 300,
+        "xiuwei": 50,
+        "gold": 1200,
+        "items": [
+          {
+            "id": "stone_qianghua",
+            "count": 5
+          },
+          {
+            "id": "token_zhenbao",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "main_004",
+      "name": "勤修不辍",
+      "type": "main",
+      "chapter": 1,
+      "giver": {
+        "map_id": "清河村",
+        "npc_id": "tieshan"
+      },
+      "min_level": 1,
+      "prev": "main_003",
+      "desc": "教头说手上功夫靠练。再与木桩人过两招，稳住了再谈下山。",
+      "objectives": [
+        {
+          "kind": "kill",
+          "target": "muzhuang",
+          "count": 2
+        }
+      ],
+      "rewards": {
+        "exp": 500,
+        "xiuwei": 80,
+        "gold": 2000,
+        "items": [
+          {
+            "id": "map_fragment_a",
+            "count": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "daily_n_001",
+      "name": "村口巡逻",
+      "type": "daily_normal",
+      "chapter": 0,
+      "giver": {
+        "map_id": "清河村",
+        "npc_id": "tieshan"
+      },
+      "min_level": 1,
+      "prev": "",
+      "desc": "每日例行：在清河村走上一圈，看看有无异常。",
+      "objectives": [
+        {
+          "kind": "visit",
+          "target": "清河村",
+          "count": 1
+        }
+      ],
+      "rewards": {
+        "exp": 60,
+        "xiuwei": 5,
+        "gold": 200,
+        "items": []
+      }
+    },
+    {
+      "id": "daily_n_002",
+      "name": "练手不辍",
+      "type": "daily_normal",
+      "chapter": 0,
+      "giver": {
+        "map_id": "清河村",
+        "npc_id": "tieshan"
+      },
+      "min_level": 1,
+      "prev": "",
+      "desc": "每日例行：与木桩人过一招，手上功夫不进则退。",
+      "objectives": [
+        {
+          "kind": "kill",
+          "target": "muzhuang",
+          "count": 1
+        }
+      ],
+      "rewards": {
+        "exp": 80,
+        "xiuwei": 8,
+        "gold": 260,
+        "items": []
+      }
+    },
+    {
+      "id": "daily_s_001",
+      "name": "宗门问安",
+      "type": "daily_sect",
+      "chapter": 0,
+      "giver": {
+        "map_id": "清河村",
+        "npc_id": "hebo"
+      },
+      "min_level": 1,
+      "prev": "",
+      "desc": "宗派日常：向村中长辈问安，维系人情。",
+      "objectives": [
+        {
+          "kind": "talk",
+          "target": "hebo",
+          "count": 1
+        }
+      ],
+      "rewards": {
+        "exp": 90,
+        "xiuwei": 30,
+        "gold": 300,
+        "items": []
+      }
+    },
+    {
+      "id": "daily_d_001",
+      "name": "肃清山贼",
+      "type": "daily_dungeon",
+      "chapter": 0,
+      "giver": {
+        "map_id": "清河村",
+        "npc_id": "tieshan"
+      },
+      "min_level": 2,
+      "prev": "",
+      "desc": "副本日常：山贼盘踞村道，肃清一伙。",
+      "objectives": [
+        {
+          "kind": "kill",
+          "target": "shanzei",
+          "count": 1
+        }
+      ],
+      "rewards": {
+        "exp": 200,
+        "xiuwei": 40,
+        "gold": 800,
+        "items": [
+          {
+            "id": "stone_qianghua",
+            "count": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "main_005",
+      "name": "村外驱狼",
+      "type": "main",
+      "chapter": 1,
+      "giver": {
+        "map_id": "清河村",
+        "npc_id": "tieshan"
+      },
+      "min_level": 2,
+      "prev": "main_004",
+      "desc": "村外野狼成群，已有村民遇袭。驱散两拨狼群（需 2 级，升级曲线 M2c 落地后可达）。",
+      "objectives": [
+        {
+          "kind": "kill",
+          "target": "yelinang",
+          "count": 2
+        }
+      ],
+      "rewards": {
+        "exp": 800,
+        "xiuwei": 120,
+        "gold": 3000,
+        "items": [
+          {
+            "id": "stone_qianghua",
+            "count": 10
+          }
+        ]
+      }
+    }
+  ]
+}

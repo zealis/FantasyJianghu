@@ -1,0 +1,10 @@
+[
+  {"name": "断岳剑宗", "category": "物理", "color": "朱橙", "residence": "高天原·断剑崖", "weapon": "剑", "feature": "暴击叠「剑意」，层数越高暴伤越高；专收残血", "secret": "《断岳剑经》"},
+  {"name": "破军枪府", "category": "物理", "color": "朱橙", "residence": "葬剑原·陷阵营", "weapon": "枪", "feature": "连击与破甲，击杀刷新连势，越战越勇", "secret": "《破军枪谱》"},
+  {"name": "惊雷殿", "category": "法术", "color": "紫", "residence": "北天庭·雷泽", "weapon": "杖", "feature": "雷法群攻，命中叠「感电」，连锁跳跃与概率麻痹", "secret": "《惊雷宝典》"},
+  {"name": "璇玑星宫", "category": "法术", "color": "紫", "residence": "高天原·星宫遗殿", "weapon": "杖", "feature": "星辉蓄力型法术，蓄力越久伤害越高；与主线星核同源，本派弟子有专属主线支线", "secret": "《璇玑星经》"},
+  {"name": "缚灵符观", "category": "封印", "color": "青", "residence": "坠魔谷口·镇魔观", "weapon": "爪", "feature": "符箓硬控：封行动、封技能；镇魔出身，对魔物封印成功率有加成", "secret": "《缚灵符箓》"},
+  {"name": "织梦谷", "category": "封印", "color": "青", "residence": "临渊镇外·迷雾谷", "weapon": "爪", "feature": "幻术软控：混乱、沉睡、降命中，以梦境层数放大控制", "secret": "《大梦心经》"},
+  {"name": "金刚禅院", "category": "肉盾", "color": "绿", "residence": "望月城·临海古刹", "weapon": "杖", "feature": "护盾、反伤与嘲讽聚火，神农罩一脉，越挨打越硬", "secret": "《金刚不坏体》"},
+  {"name": "玄水宫", "category": "肉盾", "color": "绿", "residence": "蓬莱岛·水府", "weapon": "杖", "feature": "减伤光环与持续治疗，混元伞一脉，能扛能奶的续航坦克", "secret": "《玄水真经》"}
+]

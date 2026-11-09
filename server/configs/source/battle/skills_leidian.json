@@ -1,0 +1,15 @@
+{
+  "faction": "惊雷殿",
+  "skills": [
+    {"id": "jinglei_baodian", "name": "惊雷宝典", "category": "心法", "level_req": 1, "mp_cost": 0, "passive": {"matk_pct": 300}},
+    {"id": "tianlei_po", "name": "天雷破", "category": "单体", "level_req": 10, "mp_cost": 150, "attack_type": "magic", "segments": [{"mult": 160}], "targets": 1},
+    {"id": "nulei_tianfa", "name": "怒雷天罚", "category": "单体", "level_req": 20, "mp_cost": 190, "attack_type": "magic", "segments": [{"mult": 175}], "targets": 1, "special": "shock_bonus_10"},
+    {"id": "lianhuan_pili", "name": "连环霹雳", "category": "群体", "level_req": 30, "mp_cost": 300, "attack_type": "magic", "segments": [{"mult": 95}], "targets": 2, "targets_growth": {"level": 40, "targets": 3}, "special": "shock_jump_50"},
+    {"id": "jiuxiao_shenlei", "name": "九霄神雷", "category": "群体", "level_req": 50, "mp_cost": 420, "attack_type": "magic", "segments": [{"mult": 120}], "targets": 2, "targets_growth": {"level": 40, "targets": 3}},
+    {"id": "leifu_zhou", "name": "雷缚咒", "category": "控制", "level_req": 25, "mp_cost": 180, "attack_type": "magic", "segments": [{"mult": 50}], "targets": 1, "control": {"type": "麻痹", "rate": 70, "duration": 1}},
+    {"id": "wanlei_suoyu", "name": "万雷锁域", "category": "控制", "level_req": 45, "mp_cost": 260, "attack_type": "magic", "segments": [{"mult": 40}], "targets": 2, "control": {"type": "麻痹", "rate": 60, "duration": 1}},
+    {"id": "leijia_hushen", "name": "雷甲护身", "category": "辅助", "level_req": 15, "mp_cost": 150, "buff_self": {"stat": "mdef_pct", "value": 1500, "turns": 3}},
+    {"id": "jilei_bu", "name": "疾雷步", "category": "辅助", "level_req": 35, "mp_cost": 220, "buff_self": {"stat": "speed_pct", "value": 1200, "turns": 3}, "buff_group": true},
+    {"id": "tianlei_dangmo", "name": "天雷荡魔", "category": "绝学", "level_req": 80, "mp_cost": 900, "attack_type": "magic", "segments": [{"mult": 200}], "targets": 2, "special": "shock_detonate_25"}
+  ]
+}

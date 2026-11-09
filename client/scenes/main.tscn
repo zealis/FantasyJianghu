@@ -1,0 +1,36 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="0"]
+[ext_resource type="PackedScene" path="res://scenes/battle/battle.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/world/qinghecun.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/ui/dialogue_panel.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/ui/login.tscn" id="4"]
+[ext_resource type="Script" path="res://scripts/ui/quest_ui.gd" id="6"]
+
+[node name="Main" type="Node"]
+script = ExtResource("0")
+
+[node name="World" parent="." instance=ExtResource("1")]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="HUD" parent="UILayer" instance=ExtResource("2")]
+
+[node name="QuestUI" parent="UILayer" type="Control"]
+script = ExtResource("6")
+
+[node name="DialogueLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="DialoguePanel" parent="DialogueLayer" instance=ExtResource("3")]
+
+[node name="BattleCanvas" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="BattleLayer" parent="BattleCanvas" instance=ExtResource("5")]
+
+[node name="LoginLayer" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="Login" parent="LoginLayer" instance=ExtResource("4")]

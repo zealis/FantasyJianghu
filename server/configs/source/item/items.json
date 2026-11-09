@@ -1,0 +1,40 @@
+{
+  "bag_capacity": 60,
+  "items": [
+    {
+      "id": "pill_xiaohuan",
+      "name": "小还丹",
+      "category": "丹药",
+      "stack": 99,
+      "desc": "回复少量气血的入门丹药，清河村药铺常备。"
+    },
+    {
+      "id": "stone_qianghua",
+      "name": "强化石",
+      "category": "材料",
+      "stack": 999,
+      "desc": "装备强化的通用材料，日常任务与副本产出。"
+    },
+    {
+      "id": "stone_xingyun",
+      "name": "初级幸运石",
+      "category": "材料",
+      "stack": 999,
+      "desc": "锻造幸运钥匙的初级材料，日常宝箱产出。"
+    },
+    {
+      "id": "token_zhenbao",
+      "name": "珍宝令",
+      "category": "凭证",
+      "stack": 999,
+      "desc": "珍宝抽奖凭证，成长礼包与主线产出（不可交易）。"
+    },
+    {
+      "id": "map_fragment_a",
+      "name": "地图残卷·上",
+      "category": "凭证",
+      "stack": 99,
+      "desc": "藏宝图合成材料之一，集齐上下两篇可交铁匠合成。"
+    }
+  ]
+}

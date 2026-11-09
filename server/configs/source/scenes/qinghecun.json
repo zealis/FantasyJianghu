@@ -1,0 +1,60 @@
+{
+  "map_id": "清河村",
+  "texture": "res://assets/maps/qinghecun.png",
+  "width": 2352,
+  "height": 1008,
+  "ground_y": 900,
+  "walk": {
+    "x_min": 80,
+    "x_max": 2272
+  },
+  "camera": {
+    "top": 288,
+    "bottom": 1008
+  },
+  "npcs": [
+    {
+      "id": "hebo",
+      "name": "何伯",
+      "x": 1560,
+      "dialogue": "prologue_hebo"
+    },
+    {
+      "id": "tieshan",
+      "name": "教头·铁山",
+      "x": 1900,
+      "dialogue": "tieshan"
+    }
+  ],
+  "buildings": [
+    {
+      "name": "铁匠铺",
+      "x": 560
+    },
+    {
+      "name": "村长家",
+      "x": 1560
+    },
+    {
+      "name": "石桥",
+      "x": 2100
+    }
+  ],
+  "dialogues": {
+    "prologue_hebo": [
+      {
+        "speaker": "何伯",
+        "text": "孩子，你终于回来了……村子遭了难，你妹妹阿璇被那些余孽掳走了。"
+      },
+      {
+        "speaker": "何伯",
+        "text": "他们往临渊镇方向去了。你安葬族人后，就沿着这条路去寻她吧。"
+      },
+      {
+        "speaker": "何伯",
+        "text": "记住，江湖险恶，先学会走动与对话，莫要逞强。"
+      }
+    ]
+  },
+  "type": "town"
+}

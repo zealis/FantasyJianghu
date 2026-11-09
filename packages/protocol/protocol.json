@@ -1,0 +1,69 @@
+{
+  "heartbeat_seconds": 15,
+  "heartbeat_miss_limit": 3,
+  "main_codes": {
+    "1": "系统/心跳/踢下线",
+    "2": "账号/角色",
+    "3": "世界/地图/移动",
+    "4": "战斗",
+    "5": "背包/物品",
+    "6": "装备/强化",
+    "7": "法宝",
+    "8": "命魂/神魂",
+    "9": "队伍",
+    "10": "NPC/商店",
+    "11": "任务",
+    "12": "活动",
+    "13": "宗派",
+    "14": "寄售行",
+    "15": "邮件",
+    "16": "聊天",
+    "17": "排行榜/竞技",
+    "18": "商城/VIP",
+    "19": "坐骑",
+    "20": "抽奖"
+  },
+  "sub_codes": {
+    "1": {
+      "SubPing": 0,
+      "SubKick": 1
+    },
+    "2": {
+      "SubAuth": 1,
+      "SubCharCreate": 2,
+      "SubCharSelect": 3
+    },
+    "3": {
+      "SubEnterScene": 1,
+      "SubMove": 2,
+      "SubMoveBroadcast": 3,
+      "SubLeave": 4,
+      "SubLeaveBroadcast": 5,
+      "SubPlayerJoin": 6,
+      "SubLineList": 7,
+      "SubSwitchLine": 8
+    },
+    "4": {
+      "SubBattleEnter": 1,
+      "SubBattleCmd": 2,
+      "SubBattleFrame": 3,
+      "SubBattleAck": 4,
+      "SubBattleResult": 5,
+      "SubBattleLeave": 6,
+      "SubBattleRestore": 7
+    },
+    "5": {
+      "SubBagList": 1
+    },
+    "10": {
+      "SubNpcTalk": 1
+    },
+    "11": {
+      "SubQuestList": 1,
+      "SubQuestAccept": 2,
+      "SubQuestSubmit": 3,
+      "SubQuestProgress": 4,
+      "SubQuestDaily": 5
+    }
+  }
+}

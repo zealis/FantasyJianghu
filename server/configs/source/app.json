@@ -1,0 +1,27 @@
+{
+  "heartbeat_seconds": 15,
+  "heartbeat_miss_limit": 3,
+  "max_characters_per_account": 3,
+  "move_speed": 320,
+  "move_tolerance": 16,
+  "spawn": {
+    "map_id": "清河村",
+    "x": 400
+  },
+  "factions": [
+    "断岳剑宗",
+    "破军枪府",
+    "惊雷殿",
+    "璇玑星宫",
+    "缚灵符观",
+    "织梦谷",
+    "金刚禅院",
+    "玄水宫"
+  ],
+  "scene_capacity": {
+    "town": 50,
+    "wild": 30,
+    "sect": 30,
+    "activity": 30
+  }
+}

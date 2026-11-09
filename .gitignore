@@ -1,0 +1,39 @@
+# Godot
+client/.godot/
+*.translation
+
+# Go / 服务端
+server/configs/build/
+server/data/
+*.db
+*.db-shm
+*.db-wal
+
+# 本计划工作区
+.superpowers/
+
+# 系统杂项
+Thumbs.db
+desktop.ini
+
+# --- 仓库政策：不随代码分发的目录 ---
+# 第三方原作与美术素材库（体积大、版权独立）
+/原作/
+/资产素材/
+# 内部开发文档与项目记录
+/开发文档/
+/项目进行记录/
+/docs/
+/.birdview/
+# 生成物与测试截图（测试脚本保留）
+/outputs/
+/client/tests/*.png
+/client/tests/*.png.import
+# 本工具内部记忆与缓存
+/.workbuddy/
+# 服务端编译产物
+/server/bin/
+# 敏感配置
+.env
+*.pem
+*.key
