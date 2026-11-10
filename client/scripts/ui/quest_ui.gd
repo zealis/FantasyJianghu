@@ -140,6 +140,9 @@ func open_bag() -> void:
 	_bag_panel.visible = show
 	if show:
 		QuestStore.refresh_bag()
+		# 每次开包都重新拉 6/3：装备与品质共鸣只在进场时拉过一次，
+		# 若那次请求落空（服务端重启/断线重连），共鸣行会一直停在「未激活」。
+		EquipStore.refresh()
 
 func close_panels() -> void:
 	_panel.visible = false
@@ -772,10 +775,12 @@ func _refresh_attrs() -> void:
 ## 品质共鸣行：文案直接取服务端 suit 明细，客户端不重算规则（V1.29 配置表 §4）。
 func _refresh_resonance() -> void:
 	var info: Dictionary = EquipStore.suit
+	if info.is_empty():
+		# 还没拿到服务端数据：别急着说「未激活」，否则会误导（明明穿满了却显示没共鸣）。
+		_resonance_label.text = "品质共鸣： 读取中…"
+		return
 	if int(info.get("tier", 0)) <= 0:
-		var best := _best_quality_count()
-		_resonance_label.text = ("品质共鸣： 未激活 （同品质 %d/%d 件）" % [best, 3]) if best > 0 \
-			else "品质共鸣： 未激活 （同品质 3 件起）"
+		_resonance_label.text = "品质共鸣： 未激活 （同品质 3 件起）"
 		return
 	var parts: Array = []
 	if float(info.get("all_pct", 0)) > 0:
@@ -800,17 +805,6 @@ func _refresh_resonance() -> void:
 	var tier_txt := "一档" if int(info.get("tier", 0)) == 1 else "二档"
 	_resonance_label.text = "品质共鸣： %s · %s %d 件 ｜ %s" % [
 		tier_txt, str(info.get("quality", "")), int(info.get("count", 0)), "  ".join(parts)]
-
-## 未激活时给出「还差几件」的提示。
-func _best_quality_count() -> int:
-	var counts: Dictionary = {}
-	for slot in EquipStore.slots:
-		var q := str((EquipStore.slots[slot] as Dictionary).get("quality", "凡品"))
-		counts[q] = int(counts.get(q, 0)) + 1
-	var best := 0
-	for q in counts:
-		best = maxi(best, int(counts[q]))
-	return best
 
 func _suit_attr(key: String) -> String:
 	return str(SUIT_ATTR_NAME.get(key, key))

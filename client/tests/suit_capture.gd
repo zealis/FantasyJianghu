@@ -17,9 +17,11 @@ func _ready() -> void:
 	ui_layer.add_child(_ui)
 	await _frames(3)
 
-	# ① 未激活：只穿 2 件同品质。
+	# ① 未激活：只穿 2 件同品质（服务端仍会返回 tier=0 的明细，不是空）。
 	_fill_slots("完美", 2)
-	EquipStore.suit = {}
+	EquipStore.suit = {"tier": 0, "quality": "", "count": 0, "all_pct": 0.0,
+		"main_attrs": [], "main_pct": 0.0, "sub_attr": "", "sub_pct": 0.0,
+		"tweak_attr": "", "tweak_pct": 0.0}
 	_open_bag()
 	await _frames(3)
 	await _capture("suit_row_off.png")

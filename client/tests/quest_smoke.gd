@@ -189,6 +189,22 @@ func _run() -> void:
 	if not res_text.contains("暴击 +6.5%"):
 		_fail("暴击应合并为 6.5%%（副项 3.5 + 微调 3）: %s" % res_text)
 		return
+	# 未拿到服务端数据时不能误报「未激活」（穿满了却显示没共鸣会误导）。
+	EquipStore.suit = {}
+	_layer._refresh_resonance()
+	await get_tree().process_frame
+	if not _layer._resonance_label.text.contains("读取中"):
+		_fail("无共鸣数据时应显示读取中: %s" % _layer._resonance_label.text)
+		return
+	# 服务端返回 tier=0（确实不够 3 件）才显示未激活。
+	EquipStore.suit = {"tier": 0, "quality": "", "count": 0, "all_pct": 0.0,
+		"main_attrs": [], "main_pct": 0.0, "sub_attr": "", "sub_pct": 0.0,
+		"tweak_attr": "", "tweak_pct": 0.0}
+	_layer._refresh_resonance()
+	await get_tree().process_frame
+	if not _layer._resonance_label.text.contains("未激活"):
+		_fail("tier=0 应显示未激活: %s" % _layer._resonance_label.text)
+		return
 	EquipStore.suit = {}
 
 	# 整理/出售/锁定已开放：按钮可用，详情含出售价。
