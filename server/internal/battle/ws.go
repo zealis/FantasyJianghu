@@ -48,10 +48,14 @@ func (s *Service) monsterByID(id string) *config.MonsterDef {
 	return nil
 }
 
-// skillsForLevel 按等级过滤可用秘籍（演练场按基准等级给谱）。
-func (s *Service) skillsForLevel(level int) []config.SkillDef {
+// skillsForLevel 按**门派 + 等级**过滤可用秘籍。
+// 秘籍谱按门派分文件合并，这里必须按 Faction 过滤：否则别的门派会拿到雷系/金刚系秘籍。
+func (s *Service) skillsForLevel(faction string, level int) []config.SkillDef {
 	var skills []config.SkillDef
 	for _, sk := range s.cfg.Battle.Skills {
+		if sk.Faction != faction {
+			continue
+		}
 		if level >= sk.LevelReq {
 			skills = append(skills, sk)
 		}
@@ -76,7 +80,7 @@ func (s *Service) playerUnit(ctx context.Context, charID int64) (*Unit, error) {
 		}
 	}
 	u := &Unit{ID: c.ID, Name: c.Name, Side: 0, Level: c.Level, Faction: c.Faction,
-		BaseStats: st, Stats: st, HP: st.HP, MP: st.MP, Skills: s.skillsForLevel(c.Level), Alive: true}
+		BaseStats: st, Stats: st, HP: st.HP, MP: st.MP, Skills: s.skillsForLevel(c.Faction, c.Level), Alive: true}
 	return u, nil
 }
 
@@ -161,10 +165,14 @@ func (s *Service) HandleEnter(ctx context.Context, sess *session.Session, payloa
 		// 避免 Lv1 玩家被高等级怪物模板秒杀、也能完整演示感电/反伤/顺序条。
 		// 演练场按基准等级重建（确定性演示），不含角色加点。
 		if st, err := DerivedStats(d.Level, player.Faction, s.cfg.Battle); err == nil {
+			// 演练同样要带门派心法被动（金刚印/生命物防），否则演示不出「挨打有反伤」的门派身份。
+			ps := CollectPassives(s.cfg.Battle.Skills, player.Faction, d.Level)
+			st = applyEquipAndSuit(st, nil, mergePercents(nil, ps), s.cfg.Battle.Formula.CoeffCaps)
+			st.ReflectPerStack, st.ReflectMaxStacks = ps.ReflectPerStack, ps.ReflectMaxStacks
 			player.Level, player.BaseStats, player.Stats = d.Level, st, st
 			player.HP, player.MP = st.HP, st.MP
 		}
-		player.Skills = s.skillsForLevel(d.Level)
+		player.Skills = s.skillsForLevel(player.Faction, d.Level)
 		for i := 0; i < d.Allies; i++ {
 			ally := allyUnit(player, i+1, d)
 			sideA = append(sideA, ally)
@@ -293,5 +301,8 @@ func unitSnapshot(u *Unit) map[string]any {
 		"id": u.ID, "name": u.Name, "side": u.Side, "level": u.Level, "slot": u.Slot,
 		"hp": u.HP, "mp": u.MP, "max_hp": u.BaseStats.HP, "max_mp": u.BaseStats.MP,
 		"shock_stacks": u.ShockStacks, "reflect_pct": u.ReflectPct,
+		"reflect_stacks":     u.ReflectStacks,
+		"reflect_per_stack":  u.BaseStats.ReflectPerStack,
+		"reflect_max_stacks": u.BaseStats.ReflectMaxStacks,
 	}
 }

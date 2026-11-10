@@ -100,6 +100,15 @@
   },
   "specials_deferred": [
     "shock_jump_50",
-    "shock_detonate_25"
+    "shock_detonate_25",
+    "taunt_1",
+    "taunt_2",
+    "taunt_group",
+    "bonus_vs_demon_30",
+    "heal_on_hit_2",
+    "slow_15",
+    "shield_12",
+    "damage_reduce_10",
+    "immune_shield_20"
   ]
 }

@@ -45,7 +45,8 @@ type Unit struct {
 	ShockStacks     int // M2a-2 感电层数（上限取 Effects.Shock.MaxStacks）
 	ShockDOTTurns   int // 感电 DOT 剩余回合
 	ShockDOTPower   int // 每回合 DOT 基准（施加者法攻 × 层数 × 系数，施加时快照）
-	ReflectPct      int // 反伤万分制（数值规范 §2.4：不触发连击/暴击二次判定）
+	ReflectPct      int // 单位自身反伤万分制（怪物/法宝给定值；数值规范 §2.4）
+	ReflectStacks   int // 金刚印层数（心法被动，受击叠层，上限取 Stats.ReflectMaxStacks）
 }
 
 // Event 为战报事件（客户端播放的最小单元）。
@@ -83,6 +84,7 @@ func NewBattle(seed int64, sideA, sideB []*Unit, cfg config.BattleData) *Battle 
 		u.Stats = u.BaseStats
 		// Slot/ReflectPct 属于单位定义，保留；感电状态属于对局内状态，重演前清零。
 		u.ShockStacks, u.ShockDOTTurns, u.ShockDOTPower = 0, 0, 0
+		u.ReflectStacks = 0
 	}
 	return &Battle{
 		Seed:  seed,
@@ -138,6 +140,9 @@ func effectiveStats(u *Unit) UnitStats {
 			s.MDef = int(math.Round(float64(s.MDef) * (1 + float64(bf.Value)/10000)))
 		case "speed_pct":
 			s.Speed = int(math.Round(float64(s.Speed) * (1 + float64(bf.Value)/10000)))
+		case "reflect_add":
+			// 绝学不动明王：反伤 +25%（按百分点相加，万分制），与心法/共鸣来源并列。
+			s.Reflect += bf.Value
 		}
 	}
 	return s
@@ -351,13 +356,24 @@ func actorID(u *Unit) int64 {
 	return u.ID
 }
 
-// reflectRate 反伤系数合计（万分制）：单位自身给定值（怪物/法宝/金刚印层数）
-// + 角色级反伤系数（数值规范 §9.7 管线第 ④⑤ 步已累加并裁剪）。
+// reflectRate 反伤系数合计（万分制），来源四类并列相加（数值规范 §9.7）：
+//  1. 心法金刚印：受击叠层 × 每层系数（门派身份，1 级裸装即有）；
+//  2. 绝学不动明王：Buff `reflect_add`（3 回合）；
+//  3. 品质共鸣微调（禅院 +1%~+3%）：已在 Stats.Reflect 里；
+//  4. 法宝昆仑镜概率反弹：待法宝系统落地，届时并入 Stats.Reflect。
+//
+// 单位自身 ReflectPct（怪物/心法层的等效给定值）同样计入。
 func (b *Battle) reflectRate(u *Unit) int {
 	if u == nil {
 		return 0
 	}
-	return u.ReflectPct + effectiveStats(u).Reflect
+	st := effectiveStats(u)
+	rate := u.ReflectPct + st.Reflect + u.ReflectStacks*st.ReflectPerStack
+	// 第 ⑤ 步上限仍以公式配置为准（反伤 ≤50%）。
+	if cap := b.F.CoeffCaps.ReflectPct; cap > 0 && rate > cap {
+		rate = cap
+	}
+	return rate
 }
 
 // applyDamage 统一扣血、战报、死亡与反伤。
@@ -370,6 +386,11 @@ func (b *Battle) applyDamage(evs []Event, actor, target *Unit, dmg int, flags ma
 		return evs
 	}
 	target.HP -= dmg
+	// 金刚印：受击即叠 1 层（上限取心法配置），本击的反伤就按叠层后的系数算——
+	// 这是「禅院 1 级裸装挨打就有反伤」的落点，装备与共鸣都不参与。
+	if st := effectiveStats(target); st.ReflectPerStack > 0 && target.ReflectStacks < st.ReflectMaxStacks {
+		target.ReflectStacks++
+	}
 	evs = b.emit(evs, Event{Type: "damage", Actor: actorID(actor), Target: target.ID, Value: dmg, Flags: flags})
 	if target.HP <= 0 {
 		target.HP = 0
@@ -384,7 +405,11 @@ func (b *Battle) applyDamage(evs []Event, actor, target *Unit, dmg int, flags ma
 		}
 		actor.HP -= rd
 		evs = b.emit(evs, Event{Type: "reflect", Actor: target.ID, Target: actor.ID, Value: rd,
-			Flags: map[string]any{"rate": rate}})
+			Flags: map[string]any{
+				"rate":   rate,
+				"stacks": target.ReflectStacks,
+				"max":    effectiveStats(target).ReflectMaxStacks,
+			}})
 		if actor.HP <= 0 {
 			actor.HP = 0
 			actor.Alive = false

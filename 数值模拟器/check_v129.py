@@ -212,6 +212,27 @@ def check_coeffs(formula, suit):
     check("禅院反伤完美档 3% 未触碰 50% 上限", pct * 100 <= caps.get("reflect_cap_pct", 0),
           "反伤 %.1f%% / 上限 %.0f%%" % (pct, caps.get("reflect_cap_pct", 0) / 100))
 
+    # 心法金刚印（门派身份，1 级裸装即有）与绝学不动明王必须按秘籍表 V1.1 §8 落数。
+    try:
+        jg = load("battle/skills_jingang.json")
+        skills = {s["id"]: s for s in jg.get("skills", [])}
+    except Exception as exc:  # 配置包缺文件即判失败，不放行
+        check("金刚禅院秘籍谱存在", False, str(exc))
+        return
+    passive = skills.get("jingang_buhuai", {}).get("passive", {})
+    check("金刚不坏体 生命/物防 +5%、金刚印 3%/层 上限 3",
+          passive.get("hp_pct") == 500 and passive.get("pdef_pct") == 500
+          and passive.get("reflect_per_stack") == 300 and passive.get("reflect_max_stacks") == 3,
+          str(passive))
+    check("金刚印满层反伤未触碰 50% 上限",
+          passive.get("reflect_per_stack", 0) * passive.get("reflect_max_stacks", 0)
+          <= caps.get("reflect_cap_pct", 0),
+          "9% vs 50%")
+    buff = skills.get("budong_mingwang", {}).get("buff_self", {})
+    check("不动明王 反伤 +25%、3 回合",
+          buff.get("stat") == "reflect_add" and buff.get("value") == 2500 and buff.get("turns") == 3,
+          str(buff))
+
 FACTION_CATEGORY = {
     "断岳剑宗": "物理", "破军枪府": "物理",
     "惊雷殿": "法术", "璇玑星宫": "法术",

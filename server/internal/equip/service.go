@@ -124,6 +124,8 @@ func (s *Service) HandleView(ctx context.Context, sess *session.Session, _ map[s
 		"sealhit": st.SealHit, "mcrit": st.MCrit,
 		// 角色级系数（数值规范 §9.7，万分制）：反伤 / 治疗加成 / 蓄力伤害。
 		"reflect": st.Reflect, "heal_bonus": st.HealBonus, "charge_dmg": st.ChargeDmg,
+		// 心法金刚印：每层反伤与层数上限（门派身份，裸装即有；面板可显示「反伤 +3%/层」）。
+		"reflect_per_stack": st.ReflectPerStack, "reflect_max_stacks": st.ReflectMaxStacks,
 	}
 	return map[string]any{
 		"slots": slots,

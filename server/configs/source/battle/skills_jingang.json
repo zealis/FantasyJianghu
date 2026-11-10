@@ -1,0 +1,111 @@
+{
+  "faction": "金刚禅院",
+  "source": "《秘籍配置表》V1.1 §8（金刚禅院 · 肉盾/盾反嘲讽）",
+  "skills": [
+    {
+      "id": "jingang_buhuai",
+      "name": "金刚不坏体",
+      "category": "心法",
+      "level_req": 1,
+      "mp_cost": 0,
+      "passive": {
+        "hp_pct": 500,
+        "pdef_pct": 500,
+        "reflect_per_stack": 300,
+        "reflect_max_stacks": 3
+      }
+    },
+    {
+      "id": "luohan_fumo",
+      "name": "罗汉伏魔功",
+      "category": "单体",
+      "level_req": 10,
+      "mp_cost": 120,
+      "attack_type": "physical",
+      "segments": [{"mult": 145}],
+      "targets": 1,
+      "special": "taunt_1"
+    },
+    {
+      "id": "fumo_zhangfa",
+      "name": "伏魔杖法",
+      "category": "单体",
+      "level_req": 20,
+      "mp_cost": 150,
+      "attack_type": "physical",
+      "segments": [{"mult": 170}],
+      "targets": 1,
+      "special": "bonus_vs_demon_30"
+    },
+    {
+      "id": "shizi_hou",
+      "name": "狮子吼",
+      "category": "群体",
+      "level_req": 30,
+      "mp_cost": 260,
+      "attack_type": "physical",
+      "segments": [{"mult": 80}],
+      "targets": 2,
+      "targets_growth": {"level": 40, "targets": 3},
+      "special": "taunt_group"
+    },
+    {
+      "id": "qianfo_shou",
+      "name": "千佛手",
+      "category": "群体",
+      "level_req": 50,
+      "mp_cost": 360,
+      "attack_type": "physical",
+      "segments": [{"mult": 100}],
+      "targets": 2,
+      "targets_growth": {"level": 40, "targets": 3},
+      "special": "heal_on_hit_2"
+    },
+    {
+      "id": "jingang_numu",
+      "name": "金刚怒目",
+      "category": "控制",
+      "level_req": 25,
+      "mp_cost": 140,
+      "buff_self": {"stat": "pdef_pct", "value": 1500, "turns": 2},
+      "special": "taunt_2"
+    },
+    {
+      "id": "fanyin_fumo",
+      "name": "梵音缚魔",
+      "category": "控制",
+      "level_req": 45,
+      "mp_cost": 230,
+      "targets": 2,
+      "control": {"type": "定身", "rate": 35, "duration": 1},
+      "special": "slow_15"
+    },
+    {
+      "id": "jinzhong_zhao",
+      "name": "金钟罩",
+      "category": "辅助",
+      "level_req": 15,
+      "mp_cost": 180,
+      "buff_group": true,
+      "special": "shield_12"
+    },
+    {
+      "id": "puti_xin",
+      "name": "菩提心",
+      "category": "辅助",
+      "level_req": 35,
+      "mp_cost": 230,
+      "buff_group": true,
+      "special": "damage_reduce_10"
+    },
+    {
+      "id": "budong_mingwang",
+      "name": "不动明王",
+      "category": "绝学",
+      "level_req": 80,
+      "mp_cost": 650,
+      "buff_self": {"stat": "reflect_add", "value": 2500, "turns": 3},
+      "special": "immune_shield_20"
+    }
+  ]
+}

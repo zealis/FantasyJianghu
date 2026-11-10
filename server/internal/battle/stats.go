@@ -26,9 +26,13 @@ type UnitStats struct {
 
 	// 角色级系数（数值规范 §9.7，万分制）：由心法被动、品质共鸣微调、法宝、Buff 在第 ④ 步
 	// 按百分点累加，第 ⑤ 步按 Formula.CoeffCaps 裁剪。此前引擎无这三项，套装三项微调只能登记不生效。
-	Reflect   int // 反伤系数：受击按实际伤害回弹给攻击者
-	HealBonus int // 治疗加成：最终治疗 = 基础 × (1 + 本系数)
-	ChargeDmg int // 蓄力伤害：消耗星辉的攻击秘籍伤害 × (1 + 本系数)
+	Reflect int // 反伤系数（静态来源）：受击按实际伤害回弹给攻击者
+	// 金刚印：受击叠层，每层再加 ReflectPerStack（万分制），最多 ReflectMaxStacks 层。
+	// 属于门派心法被动，与「共鸣微调」分列，1 级裸装即有。
+	ReflectPerStack  int
+	ReflectMaxStacks int
+	HealBonus        int // 治疗加成：最终治疗 = 基础 × (1 + 本系数)
+	ChargeDmg        int // 蓄力伤害：消耗星辉的攻击秘籍伤害 × (1 + 本系数)
 }
 
 // DerivedStats 按门派定位与等级派生二级属性（M2a 首版）：
@@ -243,8 +247,9 @@ func applyCoeff(a *config.AnchorStat, coeff map[string]float64) {
 
 // FinalStatsResult 为角色最终二级属性与品质共鸣明细。
 type FinalStatsResult struct {
-	Stats UnitStats
-	Suit  config.SuitResult
+	Stats   UnitStats
+	Suit    config.SuitResult
+	Passive PassiveBonus
 }
 
 // LoadFinalStats 计算角色最终二级属性（M2c 属性管线的唯一入口）：
@@ -273,8 +278,34 @@ func LoadFinalStats(ctx context.Context, char *store.Character, equips *store.Eq
 		quals = append(quals, cfg.Items.ItemQuality(itemID))
 	}
 	out.Suit = cfg.Suit.SuitResonance(quals, char.Faction, cfg.CategoryOf(char.Faction))
-	out.Stats = applyEquipAndSuit(base, sum, out.Suit.Percent, cfg.Battle.Formula.CoeffCaps)
+	// 心法/绝学被动：门派身份，与装备无关（1 级裸装即有）。§1.3 第 ④ 步同层累加。
+	out.Passive = CollectPassives(cfg.Battle.Skills, char.Faction, char.Level)
+	out.Stats = applyEquipAndSuit(base, sum, mergePercents(out.Suit.Percent, out.Passive),
+		cfg.Battle.Formula.CoeffCaps)
+	out.Stats.ReflectPerStack = out.Passive.ReflectPerStack
+	out.Stats.ReflectMaxStacks = out.Passive.ReflectMaxStacks
 	return out, nil
+}
+
+// mergePercents 把心法被动（万分制）折算成百分点后并入共鸣百分比。
+// 两者同属 §1.3 第 ④ 步来源，按百分点相加（不相乘）；反伤的共鸣微调也走这里，
+// 但只作为**其中一个来源**——心法金刚印、绝学不动明王、法宝各有独立来源（见 reflectRate）。
+func mergePercents(suit map[string]float64, p PassiveBonus) map[string]float64 {
+	out := make(map[string]float64, len(suit)+5)
+	for k, v := range suit {
+		out[k] = v
+	}
+	add := func(key string, bp int) {
+		if bp != 0 {
+			out[key] += float64(bp) / 100.0
+		}
+	}
+	add("hp", p.HPPct)
+	add("pdef", p.PDefPct)
+	add("mdef", p.MDefPct)
+	add("matk", p.MAtkPct)
+	add("heal_bonus", p.HealBonusPct)
+	return out
 }
 
 // applyEquipAndSuit 先累加装备的数值型属性，再按百分比应用共鸣加成。

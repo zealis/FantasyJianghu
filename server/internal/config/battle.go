@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -179,14 +180,29 @@ type SkillDef struct {
 		Value int    `json:"value"` // 万分制
 		Turns int    `json:"turns"`
 	} `json:"buff_self"`
-	BuffGroup bool `json:"buff_group"`
-	Passive   *struct {
-		MAtkPct int `json:"matk_pct"` // 万分制
-	} `json:"passive"`
-	Special string `json:"special"` // 特效标记；须匹配 Formula.SpecialsDeferred 或已实现集合
+	BuffGroup bool        `json:"buff_group"`
+	Passive   *PassiveDef `json:"passive"`
+	Special   string      `json:"special"` // 特效标记；须匹配 Formula.SpecialsDeferred 或已实现集合
 	// ConsumesStar 标记「释放时消耗星辉」的攻击秘籍：该类秘籍伤害吃角色级蓄力伤害系数
 	// （数值规范 §9.7 蓄力钩子）。不消耗星辉的秘籍不适用。
 	ConsumesStar bool `json:"consumes_star"`
+	// Faction 为秘籍谱所属门派（由 skills_<门派>.json 文件名/内容注入，非手写字段）。
+	Faction string `json:"-"`
+}
+
+// PassiveDef 为心法/绝学被动（数值规范 §1.3 第 ④ 步来源之一，万分制）。
+// 心法被动是**门派身份**：1 级裸装即可生效，不依赖装备与共鸣。
+type PassiveDef struct {
+	MAtkPct      int `json:"matk_pct"`       // 法攻 +%
+	HPPct        int `json:"hp_pct"`         // 生命 +%
+	PDefPct      int `json:"pdef_pct"`       // 物防 +%
+	MDefPct      int `json:"mdef_pct"`       // 法防 +%
+	HealBonusPct int `json:"heal_bonus_pct"` // 治疗加成 +%（玄水心法）
+
+	// 金刚印：受击叠层，每层反伤 +reflect_per_stack，最多 reflect_max_stacks 层。
+	// 禅院「挨打就有反伤」的来源，与品质共鸣（微调）分列，互不替代。
+	ReflectPerStack  int `json:"reflect_per_stack"`
+	ReflectMaxStacks int `json:"reflect_max_stacks"`
 }
 
 // MonsterDef 为野怪模板（M2a 首版手写数值，登记助手定案）。
@@ -331,6 +347,48 @@ func validateBattle(b BattleData) error {
 	if len(b.Skills) == 0 {
 		return fmt.Errorf("秘籍表不得为空")
 	}
+	factionSet := map[string]bool{}
+	for _, c := range b.Classes {
+		for _, f := range c.Factions {
+			factionSet[f] = true
+		}
+	}
+	for _, sk := range b.Skills {
+		if sk.Faction == "" {
+			return fmt.Errorf("秘籍 %s 缺所属门派", sk.ID)
+		}
+		if len(factionSet) > 0 && !factionSet[sk.Faction] {
+			return fmt.Errorf("秘籍 %s 门派 %q 未在定位表中登记", sk.ID, sk.Faction)
+		}
+	}
+	seenSkill := map[string]bool{}
+	for _, sk := range b.Skills {
+		if seenSkill[sk.ID] {
+			return fmt.Errorf("秘籍 id 重复: %s（多门派秘籍谱合并后必须全局唯一）", sk.ID)
+		}
+		seenSkill[sk.ID] = true
+		if p := sk.Passive; p != nil {
+			for name, v := range map[string]int{
+				"matk_pct": p.MAtkPct, "hp_pct": p.HPPct, "pdef_pct": p.PDefPct,
+				"mdef_pct": p.MDefPct, "heal_bonus_pct": p.HealBonusPct,
+				"reflect_per_stack": p.ReflectPerStack,
+			} {
+				if v < 0 || v > 10000 {
+					return fmt.Errorf("秘籍 %s 被动 %s=%d 非法（万分制 0..10000）", sk.ID, name, v)
+				}
+			}
+			if p.ReflectMaxStacks < 0 || p.ReflectMaxStacks > 10 {
+				return fmt.Errorf("秘籍 %s 金刚印层数上限 %d 非法（0..10）", sk.ID, p.ReflectMaxStacks)
+			}
+			if p.ReflectPerStack > 0 && p.ReflectMaxStacks == 0 {
+				return fmt.Errorf("秘籍 %s 配了每层反伤但层数上限为 0", sk.ID)
+			}
+			if p.ReflectPerStack*p.ReflectMaxStacks > 15000 {
+				return fmt.Errorf("秘籍 %s 金刚印反伤上限 %d 超 150%%（万分制 15000）",
+					sk.ID, p.ReflectPerStack*p.ReflectMaxStacks)
+			}
+		}
+	}
 	factionOf := map[string]bool{}
 	for _, c := range b.Classes {
 		for _, f := range c.Factions {
@@ -365,6 +423,7 @@ func isHardControl(t string, hard []string) bool {
 // loadBattleDir 从配置包 battle/ 子目录解析（哈希复核已在 Load 主体完成）。
 func loadBattleDir(dir string) (BattleData, error) {
 	var b BattleData
+	skillDir := filepath.Join(dir, "battle")
 	read := func(name string, v any) error {
 		raw, err := os.ReadFile(filepath.Join(dir, "battle", name))
 		if err != nil {
@@ -379,14 +438,12 @@ func loadBattleDir(dir string) (BattleData, error) {
 		return b, err
 	}
 	b.Classes = b.ClassBook.Classes
-	var skillBook struct {
-		Faction string     `json:"faction"`
-		Skills  []SkillDef `json:"skills"`
-	}
-	if err := read("skills_leidian.json", &skillBook); err != nil {
+	// 秘籍谱按门派分文件（skills_<门派>.json）：八派各一份，合并后按缺省门派过滤使用。
+	skills, err := loadSkillFiles(skillDir)
+	if err != nil {
 		return b, err
 	}
-	b.Skills = skillBook.Skills
+	b.Skills = skills
 	var monsterBook struct {
 		Monsters []MonsterDef `json:"monsters"`
 	}
@@ -422,6 +479,51 @@ func packBattleDir(mf *Manifest, target, source string) error {
 	return nil
 }
 
+// loadSkillFiles 读取 battle/skills_*.json 全部门派秘籍谱并合并为一个列表，
+// 同时把文件声明的门派写进每本秘籍的 Faction（供按角色门派过滤）。
+// 单文件时代遗留：此前只认惊雷殿一份，导致别的门派在战斗里拿到雷系秘籍。
+func loadSkillFiles(battleDir string) ([]SkillDef, error) {
+	entries, err := os.ReadDir(battleDir)
+	if err != nil {
+		return nil, fmt.Errorf("读 battle 目录: %w", err)
+	}
+	var names []string
+	for _, e := range entries {
+		n := e.Name()
+		if e.IsDir() || !strings.HasPrefix(n, "skills_") || !strings.HasSuffix(n, ".json") {
+			continue
+		}
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	if len(names) == 0 {
+		return nil, fmt.Errorf("battle 目录无 skills_*.json 秘籍谱")
+	}
+	var out []SkillDef
+	for _, n := range names {
+		raw, err := os.ReadFile(filepath.Join(battleDir, n))
+		if err != nil {
+			return nil, fmt.Errorf("读 battle/%s: %w", n, err)
+		}
+		var book struct {
+			Faction string     `json:"faction"`
+			Source  string     `json:"source"` // 文档出处备注（仅存档，不参与结算）
+			Skills  []SkillDef `json:"skills"`
+		}
+		if err := unmarshalStrict(raw, &book); err != nil {
+			return nil, fmt.Errorf("解析 battle/%s: %w", n, err)
+		}
+		if book.Faction == "" {
+			return nil, fmt.Errorf("battle/%s 缺 faction 字段（秘籍谱须声明所属门派）", n)
+		}
+		for i := range book.Skills {
+			book.Skills[i].Faction = book.Faction
+		}
+		out = append(out, book.Skills...)
+	}
+	return out, nil
+}
+
 // loadBattleDirFromData 直接从源目录解析战斗域（Pack 校验用，绕过哈希复核）。
 func loadBattleDirFromData(source string) (BattleData, error) {
 	return loadBattleDirRaw(filepath.Join(source, "battle"))
@@ -429,6 +531,7 @@ func loadBattleDirFromData(source string) (BattleData, error) {
 
 func loadBattleDirRaw(battleDir string) (BattleData, error) {
 	var b BattleData
+	skillDir := battleDir
 	read := func(name string, v any) error {
 		raw, err := os.ReadFile(filepath.Join(battleDir, name))
 		if err != nil {
@@ -443,14 +546,12 @@ func loadBattleDirRaw(battleDir string) (BattleData, error) {
 		return b, err
 	}
 	b.Classes = b.ClassBook.Classes
-	var skillBook struct {
-		Faction string     `json:"faction"`
-		Skills  []SkillDef `json:"skills"`
-	}
-	if err := read("skills_leidian.json", &skillBook); err != nil {
+	// 秘籍谱按门派分文件（skills_<门派>.json）：八派各一份，合并后按缺省门派过滤使用。
+	skills, err := loadSkillFiles(skillDir)
+	if err != nil {
 		return b, err
 	}
-	b.Skills = skillBook.Skills
+	b.Skills = skills
 	var monsterBook struct {
 		Monsters []MonsterDef `json:"monsters"`
 	}
