@@ -12,7 +12,14 @@
         "hp_pct": 500,
         "pdef_pct": 500,
         "reflect_per_stack": 300,
-        "reflect_max_stacks": 3
+        "reflect_max_stacks": 3,
+        "mechanics": [
+          {
+            "name": "金刚印",
+            "implemented": true,
+            "note": "已实现：applyDamage 受击叠 1 层（上限 3），本击即按叠层后的 3%/层回弹，可致死、不递归"
+          }
+        ]
       }
     },
     {
@@ -22,7 +29,11 @@
       "level_req": 10,
       "mp_cost": 120,
       "attack_type": "physical",
-      "segments": [{"mult": 145}],
+      "segments": [
+        {
+          "mult": 145
+        }
+      ],
       "targets": 1,
       "special": "taunt_1"
     },
@@ -33,7 +44,11 @@
       "level_req": 20,
       "mp_cost": 150,
       "attack_type": "physical",
-      "segments": [{"mult": 170}],
+      "segments": [
+        {
+          "mult": 170
+        }
+      ],
       "targets": 1,
       "special": "bonus_vs_demon_30"
     },
@@ -44,9 +59,16 @@
       "level_req": 30,
       "mp_cost": 260,
       "attack_type": "physical",
-      "segments": [{"mult": 80}],
+      "segments": [
+        {
+          "mult": 80
+        }
+      ],
       "targets": 2,
-      "targets_growth": {"level": 40, "targets": 3},
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      },
       "special": "taunt_group"
     },
     {
@@ -56,9 +78,16 @@
       "level_req": 50,
       "mp_cost": 360,
       "attack_type": "physical",
-      "segments": [{"mult": 100}],
+      "segments": [
+        {
+          "mult": 100
+        }
+      ],
       "targets": 2,
-      "targets_growth": {"level": 40, "targets": 3},
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      },
       "special": "heal_on_hit_2"
     },
     {
@@ -67,7 +96,11 @@
       "category": "控制",
       "level_req": 25,
       "mp_cost": 140,
-      "buff_self": {"stat": "pdef_pct", "value": 1500, "turns": 2},
+      "buff_self": {
+        "stat": "pdef_pct",
+        "value": 1500,
+        "turns": 2
+      },
       "special": "taunt_2"
     },
     {
@@ -77,7 +110,11 @@
       "level_req": 45,
       "mp_cost": 230,
       "targets": 2,
-      "control": {"type": "定身", "rate": 35, "duration": 1},
+      "control": {
+        "type": "定身",
+        "rate": 35,
+        "duration": 1
+      },
       "special": "slow_15"
     },
     {
@@ -104,7 +141,11 @@
       "category": "绝学",
       "level_req": 80,
       "mp_cost": 650,
-      "buff_self": {"stat": "reflect_add", "value": 2500, "turns": 3},
+      "buff_self": {
+        "stat": "reflect_add",
+        "value": 2500,
+        "turns": 3
+      },
       "special": "immune_shield_20"
     }
   ]

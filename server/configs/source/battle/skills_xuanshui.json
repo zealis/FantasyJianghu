@@ -11,7 +11,8 @@
       "passive": {
         "hp_pct": 400,
         "mdef_pct": 500,
-        "heal_bonus_pct": 800
+        "heal_bonus_pct": 800,
+        "mechanics": []
       }
     },
     {

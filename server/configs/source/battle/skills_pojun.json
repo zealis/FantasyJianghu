@@ -10,7 +10,14 @@
       "mp_cost": 0,
       "passive": {
         "patk_pct": 300,
-        "pcombo_pct": 500
+        "pcombo_pct": 500,
+        "mechanics": [
+          {
+            "name": "破甲",
+            "implemented": false,
+            "note": "未实现：攻击命中叠 1 层（上限 5）、每层目标物防 −3%；formula.armor_break 参数已备但引擎未结算"
+          }
+        ]
       }
     },
     {

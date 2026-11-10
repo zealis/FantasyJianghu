@@ -9,7 +9,14 @@
       "level_req": 1,
       "mp_cost": 0,
       "passive": {
-        "sealhit_pct": 500
+        "sealhit_pct": 500,
+        "mechanics": [
+          {
+            "name": "梦境",
+            "implemented": false,
+            "note": "未实现：控制命中叠 1 层（上限 3）、每层使本派控制成功率 +3%"
+          }
+        ]
       }
     },
     {

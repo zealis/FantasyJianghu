@@ -211,6 +211,24 @@ type PassiveDef struct {
 	// 禅院「挨打就有反伤」的来源，与品质共鸣（微调）分列，互不替代。
 	ReflectPerStack  int `json:"reflect_per_stack"`
 	ReflectMaxStacks int `json:"reflect_max_stacks"`
+
+	// Mechanics 为心法里**非静态**的机制段（叠层/条件触发等），逐条登记落地状态。
+	// 静态属性收益走上面的 *_pct 字段；机制段必须显式标记是否已由引擎实现，禁止含糊。
+	Mechanics []HeartMechanic `json:"mechanics"`
+}
+
+// HeartMechanic 为心法机制段（配置表原文的口径摘要 + 落地状态）。
+type HeartMechanic struct {
+	Name        string `json:"name"`        // 机制名：剑意 / 破甲 / 星辉 / 梦境 / 金刚印 / 感电 …
+	Implemented bool   `json:"implemented"` // 引擎是否真的结算
+	Note        string `json:"note"`        // 落地位置或未实现原因（必填，禁止空白）
+}
+
+// heartMechanicsReady 为引擎已真正接入的心法机制白名单。
+// 新增机制时必须先落引擎，再改这里的白名单，否则配置标 implemented=true 会被拒绝打包。
+var heartMechanicsReady = map[string]bool{
+	"金刚印": true, // applyDamage：受击叠层 → 按层反伤
+	"感电":  true, // applyShock：法术命中叠层 + 易伤/DOT（引擎级，尚未按门派限定）
 }
 
 // MonsterDef 为野怪模板（M2a 首版手写数值，登记助手定案）。
@@ -408,6 +426,23 @@ func validateBattle(b BattleData) error {
 			if p.ReflectPerStack*p.ReflectMaxStacks > 15000 {
 				return fmt.Errorf("秘籍 %s 金刚印反伤上限 %d 超 150%%（万分制 15000）",
 					sk.ID, p.ReflectPerStack*p.ReflectMaxStacks)
+			}
+			seenMech := map[string]bool{}
+			for _, m := range p.Mechanics {
+				if m.Name == "" || m.Note == "" {
+					return fmt.Errorf("秘籍 %s 机制段必须有 name 与 note", sk.ID)
+				}
+				if seenMech[m.Name] {
+					return fmt.Errorf("秘籍 %s 机制段重复: %s", sk.ID, m.Name)
+				}
+				seenMech[m.Name] = true
+				if m.Implemented && !heartMechanicsReady[m.Name] {
+					return fmt.Errorf("秘籍 %s 机制 %q 标为已实现，但引擎未接入（白名单不含）",
+						sk.ID, m.Name)
+				}
+				if !m.Implemented && heartMechanicsReady[m.Name] {
+					return fmt.Errorf("秘籍 %s 机制 %q 引擎已接入，不应再标未实现", sk.ID, m.Name)
+				}
 			}
 		}
 	}

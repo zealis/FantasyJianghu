@@ -32,6 +32,8 @@ func _ready() -> void:
 
 func _probe(faction: String, char_name: String, want: Dictionary) -> void:
 	var sfx := str(int(Time.get_unix_time_from_system()) % 10000)
+	# 角色名全局唯一：同一探针反复跑必须换名字，否则建角失败、后续 11/1 全空。
+	char_name = char_name + _cn4(int(sfx))
 	var user := "心法_" + faction + "_" + sfx
 	var token := await _login(user)
 	if token == "":
@@ -78,6 +80,14 @@ func _check(cond: bool, label: String) -> void:
 	print("[heart_live] ", "PASS " if cond else "FAIL ", label)
 	if not cond:
 		_fail += 1
+
+## 数字 → 汉字（角色名规则：2–6 个汉字）。
+func _cn4(n: int) -> String:
+	var d := "零一二三四五六七八九"
+	var s := ""
+	for i in range(4):
+		s += d.substr((n / int(pow(10, 3 - i))) % 10, 1)
+	return s
 
 func _frames(n: int) -> void:
 	for i in range(n):

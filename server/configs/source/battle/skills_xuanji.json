@@ -9,7 +9,14 @@
       "level_req": 1,
       "mp_cost": 0,
       "passive": {
-        "matk_pct": 300
+        "matk_pct": 300,
+        "mechanics": [
+          {
+            "name": "星辉",
+            "implemented": false,
+            "note": "未实现：每回合未放攻击秘籍得 1 层（上限 3）、每层法术伤害 +8%、释放攻击秘籍消耗；落地后 charge_dmg 才触发"
+          }
+        ]
       }
     },
     {

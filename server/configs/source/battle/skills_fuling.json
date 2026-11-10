@@ -9,7 +9,14 @@
       "level_req": 1,
       "mp_cost": 0,
       "passive": {
-        "sealhit_pct": 800
+        "sealhit_pct": 800,
+        "mechanics": [
+          {
+            "name": "对魔物封印加成",
+            "implemented": false,
+            "note": "未实现：对魔物封印成功率额外 +15%"
+          }
+        ]
       }
     },
     {

@@ -10,7 +10,14 @@
       "mp_cost": 0,
       "passive": {
         "patk_pct": 300,
-        "crit_dmg_pct": 1000
+        "crit_dmg_pct": 1000,
+        "mechanics": [
+          {
+            "name": "剑意",
+            "implemented": false,
+            "note": "未实现：命中 30% 概率得 1 层（上限 5）、每层暴击率 +2%、绝学消耗全部剑意"
+          }
+        ]
       }
     },
     {

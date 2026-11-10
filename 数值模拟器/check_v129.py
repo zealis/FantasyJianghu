@@ -254,6 +254,18 @@ DOC_HEARTS = {
 }
 
 
+DOC_HEART_MECHANICS = {
+    "断岳剑宗": {"剑意": False},
+    "破军枪府": {"破甲": False},
+    "惊雷殿": {"感电": True},
+    "璇玑星宫": {"星辉": False},
+    "缚灵符观": {"对魔物封印加成": False},
+    "织梦谷": {"梦境": False},
+    "金刚禅院": {"金刚印": True},
+    "玄水宫": {},
+}
+
+
 def check_hearts():
     import glob
     found = {}
@@ -277,6 +289,16 @@ def check_hearts():
         got = {k: passive.get(k, 0) for k in want}
         check("门派 %s 心法被动与秘籍表一致" % faction, got == want,
               "%s" % got)
+        # 机制段：必须显式登记（玄水为纯静态，空数组也要写出来），状态与文档表一致。
+        mechs = passive.get("mechanics")
+        check("门派 %s 心法机制段已登记（可为空数组）" % faction, isinstance(mechs, list),
+              "mechanics=%s" % mechs)
+        if isinstance(mechs, list):
+            got_m = {m.get("name"): bool(m.get("implemented")) for m in mechs}
+            check("门派 %s 心法机制与状态表和文档一致" % faction,
+                  got_m == DOC_HEART_MECHANICS[faction], "%s" % got_m)
+            check("门派 %s 机制段均有落地说明" % faction,
+                  all((m.get("note") or "").strip() for m in mechs), "%d 条" % len(mechs))
     extra = [f for f in found if f not in DOC_HEARTS]
     check("未出现表外门派心法", not extra, str(extra))
 
