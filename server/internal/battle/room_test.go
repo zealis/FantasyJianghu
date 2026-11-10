@@ -77,6 +77,24 @@ func TestTimeoutHostedAttack(t *testing.T) {
 	}
 }
 
+// NPC / 怪物由服务端出招，本来就没有玩家操控，不得播「回退 / 自动托管」。
+func TestAIUnitNotMarkedHosted(t *testing.T) {
+	now := &fakeClock{now: time.Now()}
+	room, m, caps, _ := newTestRoom(t, now)
+	room.B.unit(2).PlayerDriven = false
+	room.OnCmd("tokA", Cmd{Type: "attack"})
+	now.Advance(31 * time.Second)
+	m.Tick()
+	if len(*caps) != 1 {
+		t.Fatalf("超时后应结算: %d 帧", len(*caps))
+	}
+	for _, e := range (*caps)[0].events {
+		if e.Type == "fallback" && e.Actor == 2 {
+			t.Fatalf("NPC/怪物不应出现回退/托管战报: %+v", (*caps)[0].events)
+		}
+	}
+}
+
 func TestAckBehindResendsWithoutReresolve(t *testing.T) {
 	now := &fakeClock{now: time.Now()}
 	room, _, caps, _ := newTestRoom(t, now)

@@ -1,0 +1,27 @@
+{
+  "_note": "战斗背景按地点切换。素材源：资产素材/美术素材/战斗背景图/战斗背景_<地点>_俯视版.png，已统一导出为 client/assets/battle/bg_<key>.jpg (1280x720)。",
+  "default": "common_wild",
+  "modes": {
+    "drill": "zangjianyuan"
+  },
+  "aliases": {
+    "清河村": "qinghecun",
+    "青禾村": "qinghecun",
+    "临渊镇": "linyuanzhen",
+    "临渊镇外": "linyuanzhen",
+    "望月城": "wangyuecheng",
+    "沧澜城": "wangyuecheng",
+    "葬剑原": "zangjianyuan",
+    "蓬莱": "penglai",
+    "浮槎岛": "penglai",
+    "迷雾谷": "miwugu",
+    "坠魔谷": "zhuimogu",
+    "归墟之门": "zhuimogu",
+    "星宫": "xinggong",
+    "天枢阙": "xinggong",
+    "北天庭": "beitianting",
+    "断天岭": "beitianting",
+    "魔域": "moyu",
+    "通用野外": "common_wild"
+  }
+}

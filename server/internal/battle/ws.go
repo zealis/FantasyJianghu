@@ -80,7 +80,9 @@ func (s *Service) playerUnit(ctx context.Context, charID int64) (*Unit, error) {
 		}
 	}
 	u := &Unit{ID: c.ID, Name: c.Name, Side: 0, Level: c.Level, Faction: c.Faction,
-		BaseStats: st, Stats: st, HP: st.HP, MP: st.MP, Skills: s.skillsForLevel(c.Faction, c.Level), Alive: true}
+		BaseStats: st, Stats: st, HP: st.HP, MP: st.MP, Skills: s.skillsForLevel(c.Faction, c.Level), Alive: true,
+		// 只有玩家自己是真人操控；monsterUnit / allyUnit / drillMonsterUnit 一律 false。
+		PlayerDriven: true}
 	// 感电施加权来自心法（惊雷宝典），不是全局开关，也不按门派名硬编码。
 	u.ShockOnHit = CollectPassives(s.cfg.Battle.Skills, c.Faction, c.Level).ShockOnHit
 	return u, nil
@@ -156,6 +158,8 @@ func (s *Service) HandleEnter(ctx context.Context, sess *session.Session, payloa
 		}
 	}
 	player.Slot = 0
+	// 真人单位标记：回退/托管战报只对真人有意义（测试注入的单位同样适用）。
+	player.PlayerDriven = true
 
 	var sideB []*Unit
 	monsterUnits := map[int64]string{} // 战斗单位 id → 野怪配置 id（任务 kill 记账用）
@@ -301,6 +305,9 @@ func skillSnapshots(skills []config.SkillDef) []map[string]any {
 func unitSnapshot(u *Unit) map[string]any {
 	return map[string]any{
 		"id": u.ID, "name": u.Name, "side": u.Side, "level": u.Level, "slot": u.Slot,
+		// 入场速度：客户端据此一次排定 2×2 方阵布位（UI 规范 V1.39/V1.40），
+		// 与每回合结算的出手顺序分开，战斗过程中不再重排。
+		"speed": u.BaseStats.Speed,
 		"hp": u.HP, "mp": u.MP, "max_hp": u.BaseStats.HP, "max_mp": u.BaseStats.MP,
 		"shock_stacks": u.ShockStacks, "reflect_pct": u.ReflectPct,
 		"reflect_stacks":     u.ReflectStacks,

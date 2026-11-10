@@ -9,6 +9,8 @@ const OUT_4V4 := "D:/project/Fantasy-Jianghu/client/tests/battle_capture_4v4.png
 const OUT_TARGET := "D:/project/Fantasy-Jianghu/client/tests/battle_target_select.png"
 const OUT_FLOAT := "D:/project/Fantasy-Jianghu/client/tests/battle_float_text.png"
 const OUT_BG := "D:/project/Fantasy-Jianghu/client/tests/battle_bg_linyuanzhen.png"
+# 飘字演示色值取 UI 规范 V1.41 §5 定版（与 battle.gd COLOR_DMG 同值）。
+const COLOR_DMG_V141 := Color("A62B1A")
 
 func _ready() -> void:
 	await get_tree().process_frame
@@ -26,20 +28,24 @@ func _ready() -> void:
 	layer._play_event({"type": "order", "flags": {
 		"ids": [1, 2], "names": ["雷震子", "木桩人"], "slots": [0, 0]}})
 	layer._play_event({"type": "act", "actor": 1, "target": 2, "flags": {"skill": "天雷破"}})
-	layer._float_text(layer._units.get(2), "37", Color("C0491B"))
+	layer._float_number(layer._units.get(2), -37, COLOR_DMG_V141, false, "破")
 	if not await _capture(OUT_1V1, layer):
 		return
 
 	# --- M2a-2 4v4 演练画面（站位 / 行动顺序条 / 感电 / 反伤 / 目标黄圈） ---
 	var units: Array = []
+	# 入场速度各异：速度 2×2 方阵按降序填位（V1.39/V1.40）。
+	var ally_spd := [180, 120, 150, 90]
+	var foe_spd := [160, 130, 100, 70]
 	for i in range(4):
 		units.append({"id": 100 + i, "name": "同伴%d" % (i + 1) if i > 0 else "雷震子",
-			"side": 0, "slot": i, "hp": 760, "max_hp": 900, "mp": 180, "max_mp": 220, "reflect_pct": 0})
+			"side": 0, "slot": i, "hp": 760, "max_hp": 900, "mp": 180, "max_mp": 220,
+			"reflect_pct": 0, "speed": ally_spd[i]})
 	var enemy_names := ["木桩人", "野狼", "山贼", "荆棘武士"]
 	for i in range(4):
 		units.append({"id": 200 + i, "name": enemy_names[i], "side": 1, "slot": i,
 			"hp": 700 - i * 60, "max_hp": 700, "mp": 0, "max_mp": 0,
-			"reflect_pct": 900 if i == 3 else 0})
+			"reflect_pct": 900 if i == 3 else 0, "speed": foe_spd[i]})
 	await get_tree().process_frame
 	layer.enter_battle({
 		"battle_id": "capture-4v4", "turn_version": 0, "mode": "drill", "units": units,
@@ -51,7 +57,7 @@ func _ready() -> void:
 		"slots": [0, 1, 2, 3, 0, 1, 2, 3]}})
 	layer._play_event({"type": "act", "actor": 100, "target": 203, "flags": {"skill": "怒雷天罚"}})
 	layer._play_event({"type": "shock", "actor": 100, "target": 203, "flags": {"stacks": 2, "max": 3}})
-	layer._float_text(layer._units.get(203), "37", Color("C0491B"))
+	layer._float_number(layer._units.get(203), -386, COLOR_DMG_V141, true, "暴击")
 	layer._play_event({"type": "reflect", "actor": 203, "target": 202, "value": 12})
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -82,7 +88,7 @@ func _ready() -> void:
 	# 清掉上一组仍在停留的飘字，保证展示图干净。
 	for uid in layer._units:
 		for c in layer._units[uid].get_children():
-			if c is Label and c.name.begins_with("FloatText"):
+			if c is Node2D and c.name.begins_with("FloatText"):
 				c.queue_free()
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -102,7 +108,7 @@ func _ready() -> void:
 	# --- 按地点切换战斗背景（映射表驱动）：清掉飘字后切到临渊镇 ---
 	for uid2 in layer._units:
 		for c in layer._units[uid2].get_children():
-			if c is Label and c.name.begins_with("FloatText"):
+			if c is Node2D and c.name.begins_with("FloatText"):
 				c.queue_free()
 	layer._apply_battle_bg("临渊镇", "")
 	await get_tree().process_frame

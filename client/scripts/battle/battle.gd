@@ -6,15 +6,31 @@ extends Control
 signal battle_over
 
 # V1.28：次级文字令牌 --fj-ink-2 由 #7A6748 改深为 #5F4B2E，并要求对比度 >= 4.5:1。
-# 飘字落在明暗变化大的手绘战场上，状态色在原基础上再压深一档，并加深褐描边 + 投影。
-const COLOR_DMG := Color("C0491B")      # 物伤橙红（加深）
-const COLOR_CRIT := Color("9E1B10")     # 暴击深朱红（加大字号）
-const COLOR_MAGIC := Color("4B2A6B")    # 法伤墨紫（规范 §5）
-const COLOR_HEAL := Color("2F6B3C")     # 治疗绿（加深）
-const COLOR_SKILL := Color("8A3410")     # 秘籍名书法题字（朱橙加深）
-const COLOR_MISS := Color("5F4B2E")     # 次级提示 = V1.28 --fj-ink-2
-const COLOR_SHOCK := Color("5B3A93")    # 控制/感电紫（加深）
-const COLOR_REFLECT := Color("8A6410")   # 反伤暗金（加深）
+# V1.41 定版（UI 规范 §5 演出反馈 / 飘字规范 ⑤）：色值本身就是深色，不再二次压深。
+# 战场明暗变化大，另加浅米描边 + 深褐投影保证可读。
+const COLOR_DMG := Color("A62B1A")     # 物理伤害 · 深橙红（V1.41 定版）
+const COLOR_CRIT := Color("A62B1A")    # 暴击 · 与物伤同色，靠加大加粗区分（V1.41）
+const COLOR_MAGIC := Color("4A2A72")   # 法术伤害 · 深墨紫（V1.41）
+const COLOR_HEAL := Color("1E6B2E")    # 治疗 · 深绿（V1.41）
+const COLOR_MP := Color("1F4E79")      # 真气增减 · 深蓝（V1.41；事件源待服务端补 MP 变化）
+const COLOR_SHOCK := Color("5B2A86")   # 控制与状态 · 深紫（V1.41）
+const COLOR_MISS := Color("5F4B2E")    # 次级提示 = V1.28 --fj-ink-2（文档未定版，沿用）
+const COLOR_REFLECT := Color("8A6410") # 反伤暗金（文档未定版，沿用）
+
+## 飘字规范（UI 规范 §5 · 2026-11-10 用户定案，前端规范 §5 时间轴同步）
+## ① 正负号：增血 +N / 扣血 −N，符号与数字同色同字号，不可省略；
+## ② 归属：只出在数值实际变化的单位身上；
+## ③ 字号与定稿图比例挂钩（V1.41 补记，见文档 §5），暴击再放大加粗；
+## ④ 时机：等攻击方动作完成并回位后才出字（命中瞬间不出字）。
+const FLOAT_SIGN_PLUS := "+"
+const FLOAT_SIGN_MINUS := "−"          # U+2212 真减号，不用 ASCII 连字符
+const FLOAT_GLYPH_RATIO := 0.72        # 阿拉伯数字字面高 ≈ 0.72 × 字号（换算用）
+const FLOAT_NUM_HEIGHT_RATIO := 0.22   # 数值飘字字高 / 人物高度（V1.41 补记，定稿图实测比例）
+const FLOAT_WORD_HEIGHT_RATIO := 0.19  # 状态类文字（闪避/被控/防御…）字高比，比数值小一档
+const FLOAT_CRIT_SCALE := 1.28         # 暴击在数值飘字基础上再放大
+const FLOAT_CRIT_EMBOLDEN := 0.4       # 暴击字号放大后的合成加粗量（文档「加大加粗」）
+const FLOAT_DASH_IN := 0.18            # 冲刺去程
+const FLOAT_DASH_BACK := 0.20          # 回位回程（飘字等这段走完）
 const COLOR_PAPER := Color("f6efdf")
 const COLOR_ACCENT := Color("c46a2b")
 const BG_DIR := "res://assets/battle/bg_"
@@ -24,9 +40,14 @@ const BG_LEGACY := "res://assets/battle/bg_zangjianyuan_1280.png"
 # 立绘脚底落在 420 时，人物视觉中心约 339，正好落在可用区中部。
 const STAGE_CENTER_Y := 420.0
 const STAGE_ROW_GAP := 200.0
-const STAGE_COL_GAP_SELF := 150.0
-const STAGE_COL_GAP_ENEMY := 165.0
+# 2×2 方阵（UI 规范 V1.39/V1.40）：BASE 为每方「上排左」的屏幕 x，
+# 两列一律朝屏幕右方展开（双方同口径），不再按阵营反向错位。
+const STAGE_COL_BASE_SELF := 865.0
+const STAGE_COL_BASE_ENEMY := 180.0
+const STAGE_COL_GAP_SELF := 165.0
+const STAGE_COL_GAP_ENEMY := 150.0
 var _side_counts: Dictionary = {}
+var _formation := {}   # uid → Vector2：开场按入场速度一次排定，播放中不变位
 
 var _bg_cfg_cache: Dictionary = {}
 var _bg_path := ""
@@ -81,11 +102,20 @@ const MONSTER_ART := {
 	"山贼": "fallen_soldier",
 	"荆棘武士": "mirage_flower",
 }
+## 需要水平镜像的怪物立绘（key = monsters/ 下文件名，不含扩展名）。
+## 蜃气妖花不是正面构图：花口、花瓣与藤蔓都偏向一侧，站在左侧时原画会「背对」
+## 右侧的我方，必须翻面才朝向对手。其余三只怪物是正面/对称构图，保持原样。
+const MONSTER_FLIP := {
+	"mirage_flower": true,
+}
 const ALLY_HEIGHT := 162.0
 const ENEMY_HEIGHT := 150.0
 const ANIM_FPS := 7.0
 var _unit_anim := {}   # uid → {sprite, idle:[Texture2D], attack:[Texture2D], t, f, mode}
 var _unit_heights := {}  # uid → 立绘高度（飘字定位用，随贴图尺寸变化）
+var _unit_widths := {}   # uid → 立绘显示宽度（飘字外移避让用）
+var _dash_busy_until := 0  # 毫秒时间戳：攻击方位移未回位前，飘字一律压后到此刻
+var _float_seq := 0        # 飘字节点命名序号（同名会被 Godot 改写，靠它保证可数）
 
 func _ready() -> void:
 	theme = _theme
@@ -384,6 +414,8 @@ func enter_battle(snapshot: Dictionary) -> void:
 	for u in units:
 		var sd := int((u as Dictionary).get("side", 0))
 		_side_counts[sd] = int(_side_counts.get(sd, 0)) + 1
+	# 速度 2×2 方阵：进场时按入场速度一次排定，之后播事件不再重排。
+	_build_formation(units)
 	_speed_index = clampi(Settings.speed_index, 0, SPEEDS.size() - 1)
 	_apply_speed()
 	for u in units:
@@ -410,6 +442,7 @@ func enter_battle(snapshot: Dictionary) -> void:
 		if int(_unit_sides.get(id, 0)) == 1:
 			_set_target(int(id))
 			break
+
 
 ## 战斗域包分发（4/3 帧 / 4/5 终局 / 4/7 恢复）。
 func _on_packet(main_code: int, sub_code: int, payload: Dictionary) -> void:
@@ -513,12 +546,17 @@ func _build_body(u: Dictionary, is_self: bool) -> Dictionary:
 	sprite.name = "Body"
 	sprite.texture = tex
 	# 我方战斗帧素材面朝右；我方现在站右侧，需翻面朝左与左侧敌人对视。
-	# 敌方怪物立绘为正面构图，翻不翻无视觉差异，保持不翻。
-	sprite.flip_h = is_self
+	# 敌方怪物多数是正面构图不翻；但侧向构图的（蜃气妖花）按 MONSTER_FLIP 单独翻面，
+	# 否则花口会朝画面左侧、背对右侧的我方单位。
+	var art_name := tex.resource_path.get_file().get_basename()
+	var monster_flip := not is_self and bool(MONSTER_FLIP.get(art_name, false))
+	sprite.flip_h = is_self or monster_flip
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST  # 像素风不插值
 	sprite.scale = Vector2(sc, sc)
+	# flip_h 会把贴图绕节点原点镜像，水平对中偏移的符号要跟着取反，否则人物会偏出站位。
+	var cx := used.position.x + used.size.x * 0.5 - half.x
 	sprite.offset = Vector2(
-		-(used.position.x + used.size.x * 0.5 - half.x),
+		cx if monster_flip else -cx,
 		-(used.position.y + used.size.y - half.y))
 	return {"node": sprite, "width": float(used.size.x) * sc, "height": target_h,
 		"sprite": sprite, "idle": paths["idle"], "attack": paths["attack"]}
@@ -569,6 +607,52 @@ func _style_bar(bar: ProgressBar, color: Color) -> void:
 	bar.add_theme_stylebox_override("fill", fill)
 	bar.add_theme_stylebox_override("background", back)
 
+## 2×2 方阵布位（UI 规范 V1.39 定案 / V1.40 更正为方阵）：
+## 双方各自按**入场速度降序**填位，1 号位 = 上排左、2 号位 = 上排右、
+## 3 号位 = 下排左、4 号位 = 下排右（左右以屏幕视角为准，双方同口径）。
+## 同速按入场顺序（units[] 顺序，怪物即模板编号）定先后；开场算一次并缓存，
+## 与每回合结算的出手顺序是两回事，战斗过程中不变位。
+func _build_formation(units: Array) -> void:
+	_formation.clear()
+	var groups := {0: [], 1: []}
+	var entry := 0
+	for u in units:
+		var info: Dictionary = u
+		var side := int(info.get("side", 0))
+		if not groups.has(side):
+			groups[side] = []
+		groups[side].append({"id": int(info.get("id", 0)),
+			"speed": float(info.get("speed", 0.0)), "entry": entry})
+		entry += 1
+	for side in [0, 1]:
+		var list: Array = groups.get(side, [])
+		var n := list.size()
+		if n == 0:
+			continue
+		# 稳定排序：速度降序；速度相同则按入场顺序，保证重排结果可复现。
+		list.sort_custom(func(a, b) -> bool:
+			var sa := float(a["speed"])
+			var sb := float(b["speed"])
+			if absf(sa - sb) > 0.001:
+				return sa > sb
+			return int(a["entry"]) < int(b["entry"]))
+		for i in range(n):
+			_formation[int(list[i]["id"])] = _slot_position(side, n, i)
+
+## rank 为该方速度排名（0 最快）；n<=1 时沿用 1v1 同一水平线口径。
+func _slot_position(side: int, n: int, rank: int) -> Vector2:
+	if n <= 1:
+		return Vector2(920.0 if side == 0 else 360.0, STAGE_CENTER_Y)
+	var col := rank % 2
+	var row := int(rank / 2)
+	var y := STAGE_CENTER_Y + (float(row) - 0.5) * STAGE_ROW_GAP
+	var x := 0.0
+	if side == 0:
+		x = STAGE_COL_BASE_SELF + float(col) * STAGE_COL_GAP_SELF
+	else:
+		x = STAGE_COL_BASE_ENEMY + float(col) * STAGE_COL_GAP_ENEMY
+	return Vector2(x, y)
+
 ## 站位口径（用户 2026-11-09 定案）：
 ## - 1v1：双方同一水平线对齐，不再斜对角；
 ## - 1v多 / 4v4：按本阵营人数围绕战场中心上下对称居中，双方同行同 y，
@@ -578,26 +662,15 @@ func _spawn_unit(u: Dictionary, is_self: bool, compact: bool = false) -> void:
 	var uid := int(u.get("id", 0))
 	var node := Node2D.new()
 	node.name = str(uid)
-	var side := 0 if is_self else 1
-	var side_n := int(_side_counts.get(side, 1))
-	# 用户定案：玩家自己站右、敌方/怪物/NPC 站左。
-	var pos := Vector2(920.0, STAGE_CENTER_Y) if is_self else Vector2(360.0, STAGE_CENTER_Y)
-	var slot := int(u.get("slot", -1))
-	if side_n > 1 and slot >= 0:
-		var col := slot % 2
-		var row := int(slot / 2)
-		var rows := ceili(float(side_n) / 2.0)
-		var y := STAGE_CENTER_Y + (float(row) - float(rows - 1) * 0.5) * STAGE_ROW_GAP
-		if is_self:
-			pos = Vector2(865.0 + float(col) * STAGE_COL_GAP_ENEMY, y)
-		else:
-			pos = Vector2(330.0 - float(col) * STAGE_COL_GAP_SELF, y)
-	node.position = pos
+	# 位置只在开场由 _build_formation 算一次；事件播放不得改站位。
+	var fallback := Vector2(920.0 if is_self else 360.0, STAGE_CENTER_Y)
+	node.position = _formation.get(uid, fallback)
 	# 身体：优先真实立绘/战斗帧，缺图退回色块（不让缺资源阻断玩法）。
 	var body := _build_body(u, is_self)
 	var body_h: float = body["height"]
 	var body_w: float = body["width"]
 	_unit_heights[uid] = body_h
+	_unit_widths[uid] = body_w
 	node.add_child(body["node"])
 	if body.get("sprite") != null:
 		_unit_anim[uid] = {"sprite": body["sprite"], "idle": body["idle"], "attack": body["attack"],
@@ -751,8 +824,9 @@ func _play_event(e: Dictionary) -> void:
 	var flags: Dictionary = e.get("flags", {})
 	match etype:
 		"act":
+			# 只做出招动作与顺序条高亮；技能名不再飘字（用户 2026-11-10 21:47 定案），
+			# 招式身份由指令台与战报流承载，场上只留数值。
 			_play_attack(actor_id)
-			_float_text(_units.get(actor_id), str(flags.get("skill", "")), COLOR_SKILL, true)
 			_highlight_actor(actor_id)
 		"damage":
 			_play_attack(actor_id)  # 普攻不发 act 事件，用伤害事件驱动攻击帧
@@ -760,13 +834,15 @@ func _play_event(e: Dictionary) -> void:
 			_apply_hp(target_id, -int(e.get("value", 0)))
 			var is_crit := bool(flags.get("crit", false))
 			var color: Color = COLOR_CRIT if is_crit else (COLOR_MAGIC if bool(flags.get("magic", false)) else COLOR_DMG)
-			_float_text(_units.get(target_id), _tagged_number(int(e.get("value", 0)), flags), color, false, is_crit)
+			# 扣血出「−N」并落在被打的目标身上（不是攻击方）；延迟到回位后。
+			_float_number(_units.get(target_id), -int(e.get("value", 0)), color, is_crit, _damage_tag(flags))
 			_highlight_actor(actor_id)
 		"miss":
 			_float_text(_units.get(target_id), "闪避", COLOR_MISS)
 		"heal":
 			_apply_hp(target_id, int(e.get("value", 0)))
-			_float_text(_units.get(target_id), "疗 +" + str(e.get("value", 0)), COLOR_HEAL)
+			# 增血出「+N」，落在被治疗/被吸血回复的那个单位身上。
+			_float_number(_units.get(target_id), int(e.get("value", 0)), COLOR_HEAL)
 		"control":
 			_float_text(_units.get(target_id), "控 " + str(flags.get("type", "被控")), COLOR_SHOCK)
 		"control_fail":
@@ -791,10 +867,11 @@ func _play_event(e: Dictionary) -> void:
 			_float_text(_units.get(target_id), "感电+" + str(flags.get("stacks", 0)), COLOR_SHOCK)
 		"dot":
 			_apply_hp(target_id, -int(e.get("value", 0)))
-			_float_text(_units.get(target_id), _tagged_number(int(e.get("value", 0)), flags, ["dot"]), COLOR_SHOCK)
+			_float_number(_units.get(target_id), -int(e.get("value", 0)), COLOR_SHOCK, false, _damage_tag(flags, ["dot"]))
 		"reflect":
+			# 反伤事件的服务端 target 就是被弹伤的攻击方，飘字落在该单位身上，不与原伤害合并。
 			_apply_hp(target_id, -int(e.get("value", 0)))
-			_float_text(_units.get(target_id), _tagged_number(int(e.get("value", 0)), flags, ["reflect"]), COLOR_REFLECT)
+			_float_number(_units.get(target_id), -int(e.get("value", 0)), COLOR_REFLECT, false, _damage_tag(flags, ["reflect"]))
 		"order":
 			_order_ids = flags.get("ids", [])
 			_order_names = flags.get("names", [])
@@ -855,15 +932,21 @@ func _set_dead(unit_id: int) -> void:
 		node.modulate = Color(0.4, 0.4, 0.4, 0.6)
 	_set_state(unit_id, "倒下")
 
-func _dash_attack(actor_node: Node2D, target_node: Node2D) -> void:
+## 冲刺 → 命中 → 回位（前端规范 §5 时间轴）。返回位移总时长（秒），
+## 调用方据此把数值飘字压到「回位之后」；关闭动效时位移不发生，返回 0 即立即出字。
+func _dash_attack(actor_node: Node2D, target_node: Node2D) -> float:
 	if actor_node == null or target_node == null or not Settings.vfx:
-		return
+		return 0.0
 	var orig := actor_node.position
 	# 从右往左冲时停在目标左侧，反之停在右侧；换边后不再固定 +60。
 	var dir := -1.0 if orig.x > target_node.position.x else 1.0
 	var tw := create_tween()
-	tw.tween_property(actor_node, "position", target_node.position + Vector2(60 * dir, 40), 0.18)
-	tw.tween_property(actor_node, "position", orig, 0.2)
+	tw.tween_property(actor_node, "position", target_node.position + Vector2(60 * dir, 40), FLOAT_DASH_IN)
+	tw.tween_property(actor_node, "position", orig, FLOAT_DASH_BACK)
+	var total := FLOAT_DASH_IN + FLOAT_DASH_BACK
+	# 同一行动内后续事件（反伤、连击）也共享这个「未回位」窗口，各自按剩余时间排队。
+	_dash_busy_until = Time.get_ticks_msec() + int(round(total * 1000.0))
+	return total
 
 func _apply_hp(unit_id: int, delta: int) -> void:
 	var node: Node2D = _units.get(unit_id)
@@ -874,10 +957,13 @@ func _apply_hp(unit_id: int, delta: int) -> void:
 		return
 	bar.value = clampf(bar.value + delta, 0, bar.max_value)
 
-## 数字前拼特殊效果前缀；forced 用于事件类型本身即代表效果（dot / reflect）。
-func _tagged_number(value: int, flags: Dictionary, forced: Array = []) -> String:
-	var tags := ""
+## 伤害飘字的说明标签（跟在数字右侧、字号约 0.42 倍，颜色与数字一致）。
+## forced 用于事件类型本身即代表效果（dot / reflect）；暴击单列「暴击」。
+func _damage_tag(flags: Dictionary, forced: Array = []) -> String:
+	var tag := "暴击" if bool(flags.get("crit", false)) else ""
 	for k in DMG_TAGS:
+		if k == "crit":
+			continue  # 暴击已按 §5「加大加粗」表现，不再叠「爆」字
 		var v: Variant = flags.get(k, false)
 		var on := false
 		match typeof(v):
@@ -887,39 +973,113 @@ func _tagged_number(value: int, flags: Dictionary, forced: Array = []) -> String
 		if forced.has(k):
 			on = true
 		if on:
-			tags += str(DMG_TAGS[k])
-	return (tags + " " if tags != "" else "") + str(value)
+			tag += ("" if tag == "" else "·") + str(DMG_TAGS[k])
+	return tag
 
-## 飘字：V1.28 加深 + 深褐描边/投影，停留时间由 0.8s 延长到约 1.8~2.0s。
-## emphasis 用于暴击等（规范 §5「暴击加大加粗」），above 用于技能名浮在名牌之上。
-func _float_text(node: Node2D, text: String, color: Color, above: bool = false, emphasis: bool = false) -> void:
+## 数值飘字（§5 ①②③④ 的唯一入口）：自动带符号、按单位身高定字号、暴击再放大、
+## 自动排到攻击方回位之后。value 带正负号：> 0 出「+N」，< 0 出「−N」，0 不出字。
+func _float_number(node: Node2D, value: int, color: Color, emphasis: bool = false, tag: String = "") -> void:
+	if value == 0:
+		return
+	var text := (FLOAT_SIGN_PLUS if value > 0 else FLOAT_SIGN_MINUS) + str(absi(value))
+	_float_pop(node, text, color, emphasis, true, tag)
+
+## 状态/提示类飘字（闪避、被控、防御、秘籍名题字…）：不带数值符号，走文字档字号。
+func _float_text(node: Node2D, text: String, color: Color) -> void:
+	if text == "":
+		return
+	_float_pop(node, text, color, false, false, "")
+
+## 字号换算：把「字高」反推成字号。字号是 em 尺寸，数字字面高约 0.72 em，
+## 所以要让字高 ≥ 人物高度的一半，字号得放大到 0.5h / 0.72。
+func _float_font_size(h: float, emphasis: bool, numeric: bool) -> int:
+	var ratio := FLOAT_NUM_HEIGHT_RATIO if numeric else FLOAT_WORD_HEIGHT_RATIO
+	var px := maxf(h * ratio, 20.0) / FLOAT_GLYPH_RATIO
+	if emphasis:
+		px *= FLOAT_CRIT_SCALE
+	return int(round(px))
+
+## 飘字渲染：V1.28 加深 + 浅米描边 / 深褐投影；停留约 1.8~2.0s。
+## 位置按「人物身高定字号、立绘边缘外移」摆放，避开名牌与血蓝条；
+## 同单位已有飘字时向上错层，避免 4v4 密集事件叠成一团。
+func _float_pop(node: Node2D, text: String, color: Color, emphasis: bool,
+		numeric: bool, tag: String) -> void:
 	if node == null or not Settings.float_text:
 		return
-	var h: float = _unit_heights.get(int(str(node.name)), 150.0)
-	var lab := Label.new()
-	lab.name = "FloatText"
-	lab.text = text
-	lab.add_theme_font_size_override("font_size", 30 if emphasis else 22)
-	lab.add_theme_color_override("font_color", color)
-	# 手绘战场明暗变化大：浅米描边把字从暗处「抠」出来，深褐投影在亮天空上压出立体感。
-	lab.add_theme_color_override("font_outline_color", Color("F6EFDF"))
-	lab.add_theme_constant_override("outline_size", 4 if emphasis else 3)
-	lab.add_theme_color_override("font_shadow_color", Color(0.15, 0.08, 0.03, 0.85))
-	lab.add_theme_constant_override("shadow_offset_x", 2)
-	lab.add_theme_constant_override("shadow_offset_y", 2)
-	# 同单位已有飘字时错开，避免停留变长后 4v4 密集事件叠成一团。
+	# ④ 延迟出现：攻击方位移未回位前一律压后，命中瞬间不出字。
+	var wait := float(_dash_busy_until - Time.get_ticks_msec()) / 1000.0
+	if wait > 0.001:
+		var t := get_tree().create_timer(wait)
+		t.timeout.connect(func() -> void:
+			if is_instance_valid(node):
+				_float_pop(node, text, color, emphasis, numeric, tag))
+		return
+	var uid := int(str(node.name))
+	var h: float = _unit_heights.get(uid, 150.0)
+	var fs := _float_font_size(h, emphasis, numeric)
+	# 同单位已有飘字：向上错层（不左右错开，避免压到隔壁单位）。
 	var live := 0
 	for c in node.get_children():
-		if c is Label and c.name.begins_with("FloatText"):
+		if c is Node2D and str(c.name).begins_with("FloatText"):
 			live += 1
-	lab.position = Vector2(-20 + (live % 2) * 16.0,
-		(-h - 50.0 if above else -h * 0.55) - float(live % 3) * 24.0)
-	node.add_child(lab)
+
+	# 先入树再量尺寸：Label 的最小尺寸依赖主题字体，脱离场景树时取到的是默认字体。
+	_float_seq += 1
+	var holder := Node2D.new()
+	holder.name = "FloatText%d" % _float_seq
+	node.add_child(holder)
+	var num := _make_float_label(text, color, fs, FLOAT_CRIT_EMBOLDEN if emphasis else 0.0)
+	holder.add_child(num)
+	num.reset_size()
+	var total_w := num.size.x
+	var total_h := num.size.y
+	if tag != "":
+		var tag_fs := maxi(14, int(round(fs * 0.42)))
+		var tl := _make_float_label(tag, color, tag_fs)
+		holder.add_child(tl)
+		tl.reset_size()
+		# 标签贴在数字右侧偏上（对齐数字上沿，仿定稿「−1,024 暴击」的排法）。
+		tl.position = Vector2(num.size.x + 4.0, fs * 0.06)
+		total_w += tl.size.x + 4.0
+
+	# 飘字就压在角色身上：水平居中于立绘，垂直落在胸/头之间（定稿图口径）。
+	# 不朝战场外侧漂——数值离开人物就等于没归属，玩家会看成「不知道谁掉的」。
+	var x := -total_w * 0.5
+	var y := -h * 0.62 - total_h * 0.5
+	# 同单位连续出字：向上错层，不左右错开（左右错会漂到隔壁单位头上）。
+	y -= float(mini(live, 3)) * total_h * 0.9
+	# 只做整体夹取防出画，不改变「贴人」原则。
+	var left_limit := 8.0 - node.position.x
+	var right_limit := size.x - 8.0 - node.position.x - total_w
+	x = clampf(x, left_limit, maxf(right_limit, left_limit))
+	y = clampf(y, 8.0 - node.position.y, 520.0 - node.position.y)
+	holder.position = Vector2(x, y)
+
 	var tw := create_tween()
-	tw.tween_property(lab, "position:y", lab.position.y - 46.0, 0.55)
+	tw.tween_property(holder, "position:y", holder.position.y - 46.0, 0.55)
 	tw.tween_interval(0.9 if emphasis else 0.7)
-	tw.tween_property(lab, "modulate:a", 0.0, 0.55)
-	tw.tween_callback(lab.queue_free)
+	tw.tween_property(holder, "modulate:a", 0.0, 0.55)
+	tw.tween_callback(holder.queue_free)
+
+## 飘字单个 Label：颜色由调用方给（分色不适用数值白色总则），描边随字号加粗。
+func _make_float_label(text: String, color: Color, fs: int, embolden: float = 0.0) -> Label:
+	var lab := Label.new()
+	lab.text = text
+	lab.add_theme_font_size_override("font_size", fs)
+	# V1.41 定版色值本身就是深色，直接落色（旧实现再 darkened 一档会偏离定版）。
+	lab.add_theme_color_override("font_color", color)
+	lab.add_theme_color_override("font_outline_color", Color("F6EFDF"))
+	lab.add_theme_constant_override("outline_size", maxi(3, int(round(fs * 0.055))))
+	lab.add_theme_color_override("font_shadow_color", Color(0.15, 0.08, 0.03, 0.85))
+	lab.add_theme_constant_override("shadow_offset_x", maxi(2, int(round(fs * 0.035))))
+	lab.add_theme_constant_override("shadow_offset_y", maxi(2, int(round(fs * 0.035))))
+	# 暴击「加大加粗」：用 FontVariation 对默认字体做合成加粗，不依赖额外粗体字体文件。
+	if embolden > 0.0:
+		var fv := FontVariation.new()
+		fv.base_font = ThemeDB.fallback_font
+		fv.variation_embolden = embolden
+		lab.add_theme_font_override("font", fv)
+	return lab
 
 func _show_result(winner: int) -> void:
 	if _result_label:

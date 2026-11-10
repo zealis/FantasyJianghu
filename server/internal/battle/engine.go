@@ -40,6 +40,7 @@ type Unit struct {
 	ControlCount    int // 连控次数（递减）
 	Defending       bool
 	Hosted          bool // 本回合被托管（战报标记）
+	PlayerDriven    bool // 真人操控：只有玩家自己为 true，NPC/怪物/托管队友为 false
 	Alive           bool
 	Slot            int  // 4v4 站位槽（0..3，客户端按此布局）
 	ShockStacks     int  // M2a-2 感电层数（上限取 Effects.Shock.MaxStacks）
@@ -594,15 +595,20 @@ func (b *Battle) executeSkill(actor *Unit, targets []*Unit, skill config.SkillDe
 }
 
 // executeAttack 普攻（倍率 100%，单目标）。
+// 「回退 / 自动托管」是给玩家的反馈：玩家选的招被回退、或本回合没出手被托管。
+// NPC / 怪物 / 服务端托管队友本来就没有人操控，不存在「托管」这件事，
+// 因此只在 PlayerDriven 单位上出这两条战报，避免战斗飘字满屏「回退/托管」。
 func (b *Battle) executeAttack(actor, target *Unit, fallback bool) []Event {
 	var evs []Event
-	if fallback {
+	if fallback && actor.PlayerDriven {
 		evs = b.emit(evs, Event{Type: "fallback", Actor: actor.ID,
 			Flags: map[string]any{"回退": true, "reason": "mp_short"}})
 	}
 	if actor.Hosted {
-		evs = b.emit(evs, Event{Type: "fallback", Actor: actor.ID,
-			Flags: map[string]any{"回退": true, "reason": "hosted"}})
+		if actor.PlayerDriven {
+			evs = b.emit(evs, Event{Type: "fallback", Actor: actor.ID,
+				Flags: map[string]any{"回退": true, "reason": "hosted"}})
+		}
 		actor.Hosted = false
 	}
 	out := b.damageRollTyped(actor, target, 1.0, actor.Level-target.Level, "physical", target.Defending)

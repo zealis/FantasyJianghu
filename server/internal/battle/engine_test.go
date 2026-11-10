@@ -57,13 +57,21 @@ func formulaCfg() config.BattleFormula {
 	}
 }
 
+// mkUnit 造一个真人操控的测试单位（回退/托管战报只对 PlayerDriven 生效）。
 func mkUnit(id int64, name string, side int, atk, def, hp int) *Unit {
 	return &Unit{
 		ID: id, Name: name, Side: side, Level: 20,
 		BaseStats: UnitStats{HP: hp, MP: 1000, PAtk: atk, MAtk: atk, PDef: def, MDef: def, Speed: 1000},
 		Stats:     UnitStats{HP: hp, MP: 1000, PAtk: atk, MAtk: atk, PDef: def, MDef: def, Speed: 1000},
-		HP:        hp, MP: 1000, Alive: true,
+		HP:        hp, MP: 1000, Alive: true, PlayerDriven: true,
 	}
+}
+
+// mkAIUnit 造一个非真人单位（NPC 队友 / 怪物）：永远不该出现回退/托管战报。
+func mkAIUnit(id int64, name string, side int, atk, def, hp int) *Unit {
+	u := mkUnit(id, name, side, atk, def, hp)
+	u.PlayerDriven = false
+	return u
 }
 
 // flatRng 恒定返回 v（浮动=0.95+0.1v、命中/暴击判定 f<v 判真）。
@@ -581,5 +589,19 @@ func TestShockOnlyFromLeidian(t *testing.T) {
 	}
 	if stacks, shocks := run(false); stacks != 0 || shocks != 0 {
 		t.Fatalf("非雷殿法术命中不得施加感电，实际 stacks=%d events=%d", stacks, shocks)
+	}
+}
+
+// TestUnitSnapshotCarriesEntrySpeed 速度 2×2 方阵布位（UI 规范 V1.39/V1.40）
+// 依赖快照里的入场速度；必须取 BaseStats.Speed，不能取回合中重算的 Stats.Speed，
+// 否则 4/7 断线恢复会把阵形重排成另一个结果。
+func TestUnitSnapshotCarriesEntrySpeed(t *testing.T) {
+	u := mkAIUnit(7, "妖花", 1, 100, 50, 500)
+	u.BaseStats.Speed = 175
+	u.Stats.Speed = 999
+	snap := unitSnapshot(u)
+	got, ok := snap["speed"].(int)
+	if !ok || got != 175 {
+		t.Fatalf("入场速度应取 BaseStats.Speed=175, 实得 %v", snap["speed"])
 	}
 }

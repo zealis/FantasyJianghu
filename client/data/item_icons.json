@@ -1,0 +1,16 @@
+{
+  "icons": {
+    "pill_xiaohuan": "res://assets/items/pill_xiaohuan.png",
+    "exp_dan": "res://assets/items/exp_dan.png",
+    "stone_qianghua": "res://assets/items/stone_qianghua.png",
+    "stone_xingyun": "res://assets/items/stone_xingyun.png",
+    "token_zhenbao": "res://assets/items/token_zhenbao.png",
+    "map_fragment_a": "res://assets/items/map_fragment_a.png",
+    "sword_wood": "res://assets/items/sword_wood.png",
+    "robe_yunjin": "res://assets/items/robe_yunjin.png",
+    "hat_wujin": "res://assets/items/hat_wujin.png",
+    "pei_liuyun": "res://assets/items/pei_liuyun.png",
+    "boots_lanyue": "res://assets/items/boots_lanyue.png"
+  },
+  "fallback_category_text": true
+}
