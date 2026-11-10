@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/maps/qinghecun_v7.png" id="1"]
+[ext_resource type="Script" path="res://scripts/game/world_topdown_v7.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/game/topdown_player_v7.gd" id="3"]
+
+[node name="QinghecunV7" type="Node2D"]
+script = ExtResource("2")
+
+[node name="Map" type="Sprite2D" parent="."]
+texture = ExtResource("1")
+centered = false
+
+[node name="Collisions" type="Node2D" parent="."]
+
+[node name="Interactions" type="Node2D" parent="."]
+
+[node name="YSortLayer" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Player" type="CharacterBody2D" parent="YSortLayer"]
+position = Vector2(520, 700)
+script = ExtResource("3")

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>清河村 · 手画碰撞编辑器</title>
+<style>
+:root{--bg:#F6F1E4;--card:#FFFCF5;--ink:#2C2C2A;--ink2:#5F5B50;--line:#D9D0BC;--accent:#8A3410}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1500px;margin:0 auto;padding:14px 18px 30px}
+h1{font-size:16px;font-weight:600;margin:0 0 4px}
+.sub{color:var(--ink2);font-size:12px;margin-bottom:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+details.guide summary{cursor:pointer;font-weight:600;font-size:13px}
+.guide ol{margin:8px 0 4px;padding-left:20px}
+.guide li{margin:3px 0}
+.guide code{background:#EFE8D8;padding:1px 5px;border-radius:4px;font-size:12px}
+.rules{color:var(--ink2);font-size:12px;border-top:1px dashed var(--line);margin-top:8px;padding-top:8px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bar label{font-size:12px;color:var(--ink2);display:flex;gap:4px;align-items:center}
+select,input[type=text],input[type=number]{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 7px;font:12px inherit;color:var(--ink)}
+input[type=number]{width:64px}
+button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:6px;padding:5px 10px;font:12px inherit;cursor:pointer}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{color:#fff;opacity:.9}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:10px}
+.canvasbox{position:relative;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+canvas{display:block;width:100%;height:auto;cursor:crosshair}
+#coord{position:absolute;right:8px;bottom:8px;background:rgba(30,25,18,.82);color:#fff;padding:2px 8px;border-radius:5px;font-size:12px;pointer-events:none}
+.side{display:flex;flex-direction:column;gap:10px}
+.list{max-height:330px;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px}
+.item{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:5px;cursor:pointer;font-size:12px}
+.item:hover{background:#EFE8D8}
+.item.sel{background:#E8DDC4}
+.sw{width:10px;height:10px;border-radius:2px;flex:none}
+.txt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kind{color:var(--ink2);font-size:11px}
+.item button{padding:0 5px;border:none;background:none;font-size:14px;line-height:1}
+textarea{width:100%;height:150px;border:1px solid var(--line);border-radius:8px;padding:8px;font:11px/1.5 Consolas,Monaco,monospace;background:#fff;color:var(--ink);resize:vertical}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(30,25,18,.9);color:#fff;padding:7px 16px;border-radius:8px;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:1}
+@media(max-width:1000px){.main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>清河村 · 手画碰撞编辑器</h1>
+<div class="sub">默认空白画布，不预置任何碰撞框。底图可选（选 <code>client/assets/maps/qinghecun_v7.png</code>）；想对照现有碰撞，用右下「载入当前项目碰撞」。坐标一律按图内像素，导出可直接粘回 <code>qinghecun_v7_logic.json</code>。</div>
+
+<div class="card">
+<details class="guide" open>
+<summary>怎么画（5 步）</summary>
+<ol>
+<li><b>选底图</b>：右上「选择底图」加载定稿图。网格默认每 100px，可切 50/200/关闭；鼠标位置实时显示在右下角。</li>
+<li><b>选类型</b>：<code>wall_base</code> 建筑占地、<code>water_bank</code> 水体岸线、<code>tree_trunk</code> 树干基点、<code>interaction</code> 门洞热区、<code>spawn</code> 出生点。后三类是「单击即落点」，前两类是「点顶点 → 闭合」。</li>
+<li><b>点顶点</b>：沿轮廓顺时针或逆时针逐个点击；点回第一个顶点、或按「闭合多边形」、或按 Enter 结束。Backspace 撤一个点，Esc 取消整条。</li>
+<li><b>改 / 删</b>：右栏列表点选可高亮，× 删除；「清空画布」清空全部。需要对照旧碰撞时，用右下「载入当前项目碰撞」，看完再清空即可。</li>
+<li><b>导出</b>：「生成片段」得到 <code>collisions / interactions / spawn</code>；「下载完整 logic.json」直接得到可替换的文件。粘回项目后跑 <code>qinghecun_v7_smoke</code> 验证。</li>
+</ol>
+<div class="rules">
+<b>当前项目口径（用户 2026-11-11 手画定案 · 扩张版13）</b>：当前试点底图为 <code>qinghecun_v8.png</code>（1920×1280），用 2 组 <code>wall_base</code> 凹多边形把建筑、河面、农田、山体等<b>所有不可走地形整片围合</b>，中间只留中央青石板广场与环村土路；判据是「障碍之外即地面」。多边形不要自交，Godot 的 BUILD_SOLIDS 会自动做凸分解。旧版 1536×1024 的 4 组障碍留存于 v7 试点。<br><b>分类口径（备用，V1.42 §4）</b>：① 建筑按占地投影围合（斜俯视下须从南墙基线延伸到屋檐上沿）；② 水体按 y 分段描岸线、桥面留横向通道；③ 树只画树干基点小圆。<br><b>通用</b>：门洞热区放在墙<b>前</b>的可走地面；碰撞挡的是脚底圆（半径 8px），岸边可略向外多包几像素；画完必须写冒烟断言 + 实拍，别只靠肉眼。<br>
+<b>画完必验</b>：在冒烟里加「某坐标必须落在碰撞内 / 不得落在碰撞内」的断言，再实拍一张，别只靠肉眼看底图。
+</div>
+</details>
+</div>
+
+<div class="card bar">
+<label>底图 <input type="file" id="file" accept="image/*"></label>
+<label>网格 <select id="grid"><option value="50">50px</option><option value="100" selected>100px</option><option value="200">200px</option><option value="0">关闭</option></select></label>
+<label>类型 <select id="kind">
+<option value="wall_base">wall_base 建筑占地</option>
+<option value="water_bank">water_bank 水体岸线</option>
+<option value="tree_trunk">tree_trunk 树干基点</option>
+<option value="interaction">interaction 门洞热区</option>
+<option value="spawn">spawn 出生点</option>
+</select></label>
+<label>名称 <input type="text" id="name" placeholder="留空自动命名" size="16"></label>
+<label>半径 <input type="number" id="radius" value="12"></label>
+<button id="close" class="primary">闭合多边形</button>
+<button id="undo">撤销点</button>
+<button id="cancel">取消当前</button>
+<button id="del">删除选中</button>
+<button id="reset">清空画布</button>
+<button id="gen">生成片段</button>
+<button id="copy">复制</button>
+<button id="download">下载完整 logic.json</button>
+</div>
+
+<div class="main">
+<div class="canvasbox"><canvas id="cv" width="1152" height="768"></canvas><div id="coord">坐标 (-, -)</div></div>
+<div class="side">
+<div class="list" id="list"></div>
+<div class="card" style="margin:0">
+<div style="font-size:12px;font-weight:600;margin-bottom:6px">导出片段</div>
+<textarea id="out" placeholder="点「生成片段」"></textarea>
+</div>
+<details class="card" style="margin:0">
+<summary style="cursor:pointer;font-size:12px;font-weight:600">导入现有 JSON</summary>
+<textarea id="in" placeholder="粘贴 qinghecun_v7_logic.json 全文，或只粘贴 collisions 数组" style="margin-top:8px;height:110px"></textarea>
+<button id="imp" style="margin-top:6px">导入并覆盖画布</button>
+<button id="loadproj" style="margin-top:6px">载入当前项目碰撞（对照用）</button>
+</details>
+</div>
+</div>
+</div>
+<div id="toast"></div>
+
+<script>
+const PROJECT_DATA = {"map_id":"清河村","map_label":"清河村 · 扩张版13 · 2.5D 斜俯视","version":"2.5D 斜俯视扩张版试点（UI 规范 V1.43 / 前端规范 §4）· 手画整片障碍块","texture":"res://assets/maps/qinghecun_v8.png","size":[1920,1280],"style_baseline":"全项目风格基准图；近景一图一功能区，禁止整村远景；人物 62 图内 px ≈ 门洞高 ×0.9","note":"底图换为「清河村_定稿图_扩张版13.png」1920×1280（V1.43 地图更新）；碰撞为用户在 tools/collision_editor.html 手画的 2 组 wall_base 凹多边形，把建筑、河面、农田、山体整片围合，中间留中央青石板广场与环村土路（可走约 30%，主连通块占 91%）。门洞/NPC/怪物/传送点已重新落到可达可走区。","spawn":[950,780],"camera":{"left":0,"top":0,"right":1920,"bottom":1280,"zoom":1.6},"render":{"sprite_scale":0.28,"sprite_offset_y":-32,"walk_fps":8.0,"speed":200.0,"character_height_px":62,"door_height_px":69},"collisions":[{"kind":"wall_base","name":"建筑占地 1","polygon":[[756,500],[366,710],[421,746],[436,797],[457,835],[542,869],[580,895],[457,941],[438,965],[482,999],[654,916],[744,960],[790,969],[807,937],[850,869],[913,897],[918,941],[932,971],[994,994],[1039,963],[1155,988],[1291,1056],[1525,1164],[1660,1234],[1707,1154],[1909,1166],[1904,1264],[13,1268],[5,124],[512,339],[599,334],[646,356],[705,383],[744,413],[790,457],[807,472]]},{"kind":"wall_base","name":"建筑占地 2","polygon":[[9,14],[162,73],[262,82],[381,80],[417,114],[523,114],[565,126],[574,165],[533,215],[546,254],[591,281],[682,300],[761,330],[816,368],[875,402],[975,377],[1187,462],[1389,364],[1393,343],[1338,315],[1291,290],[1253,262],[1312,228],[1384,256],[1457,273],[1510,300],[1471,368],[1457,423],[1469,500],[1486,572],[1546,614],[1616,640],[1750,587],[1786,621],[1639,687],[1575,682],[1529,742],[1452,767],[1367,767],[1304,782],[1270,839],[1242,890],[1189,926],[1699,1154],[1909,1120],[1898,7]]}],"interactions":[{"name":"村中大宅","door":[1130,452],"radius":70},{"name":"东田小院","door":[1484,306],"radius":70},{"name":"南舍","door":[1352,1014],"radius":70}],"npcs":[{"id":"hebo","name":"何伯","x":780,"y":680},{"id":"tieshan","name":"教头·铁山","x":1250,"y":700}],"monsters":[{"id":"wolf_1","name":"青牙狼","x":600,"y":850,"range":60,"speed":40,"idle_min":3.0,"idle_max":4.0,"move_time":1.0,"scale":0.157}],"buildings":[{"name":"村中大宅","x":1130,"y":420},{"name":"东田小院","x":1500,"y":330},{"name":"南舍","x":1400,"y":950}],"portals":[{"name":"清河村野外","x":468,"y":972}]};
+const STYLE = {
+  wall_base:{fill:'rgba(220,40,30,0.18)',line:'#A32D2D',label:'建筑占地'},
+  water_bank:{fill:'rgba(24,90,200,0.20)',line:'#185FA5',label:'水体岸线'},
+  tree_trunk:{fill:'rgba(30,160,80,0.20)',line:'#0F6E56',label:'树干基点'},
+  interaction:{fill:'rgba(220,160,20,0.20)',line:'#BA7517',label:'门洞热区'},
+  spawn:{fill:'rgba(90,70,180,0.25)',line:'#534AB7',label:'出生点'}
+};
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+let W=1536,H=1024,S=1,img=null,grid=100,items=[],cur=[],sel=-1,seq=1;
+
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),1600);}
+function setSize(w,h){W=w;H=h;cv.width=1152;cv.height=Math.round(1152*h/w);S=cv.width/W;draw();}
+function toMap(e){const r=cv.getBoundingClientRect();return [Math.round((e.clientX-r.left)/r.width*W),Math.round((e.clientY-r.top)/r.height*H)];}
+function defaultName(kind){return (STYLE[kind]?STYLE[kind].label:'区域')+' '+(seq++);}
+function norm(c,from){
+  if(from==='interactions')return {kind:'interaction',name:c.name||'',center:(c.door||[0,0]).slice(),radius:Number(c.radius)||60};
+  return {kind:c.kind||'wall_base',name:c.name||'',polygon:c.polygon?c.polygon.map(p=>p.slice()):null,center:c.center?c.center.slice():null,radius:Number(c.radius)||12};
+}
+function initCanvas(){
+  const d=PROJECT_DATA;
+  const sz=d.size||[1536,1024];
+  W=sz[0];H=sz[1];cv.width=1152;cv.height=Math.round(1152*H/W);S=cv.width/W;
+  items=[];cur=[];sel=-1;seq=1;renderList();draw();
+}
+function loadProjectData(){
+  const d=PROJECT_DATA;
+  initCanvas();
+  (d.collisions||[]).forEach(c=>items.push(norm(c,'collisions')));
+  (d.interactions||[]).forEach(c=>items.push(norm(c,'interactions')));
+  if(d.spawn)items.push({kind:'spawn',name:'出生点',center:d.spawn.slice(),radius:14});
+  cur=[];sel=-1;renderList();draw();toast('已载入项目当前碰撞（可清空）');
+}
+function draw(preview){
+  ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.save();ctx.scale(S,S);
+  ctx.fillStyle='#FBF7EC';ctx.fillRect(0,0,W,H);
+  if(img)ctx.drawImage(img,0,0,W,H);
+  if(grid>0){
+    ctx.strokeStyle='rgba(170,60,40,0.25)';ctx.lineWidth=1/S;
+    ctx.fillStyle='rgba(80,40,30,0.75)';ctx.font=(11/S)+'px sans-serif';
+    for(let x=0;x<=W;x+=grid){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();if(x+grid<=W)ctx.fillText(String(x),x+3/S,12/S);}
+    for(let y=0;y<=H;y+=grid){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();if(y+grid<=H)ctx.fillText(String(y),3/S,y+12/S);}
+  }
+  items.forEach((it,i)=>{
+    const st=STYLE[it.kind]||STYLE.wall_base;
+    ctx.fillStyle=st.fill;ctx.strokeStyle=st.line;ctx.lineWidth=(i===sel?2.6:1.4)/S;
+    ctx.beginPath();
+    if(it.polygon&&it.polygon.length>2){it.polygon.forEach((p,j)=>j?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();}
+    else if(it.center){ctx.arc(it.center[0],it.center[1],it.radius||12,0,Math.PI*2);}
+    else return;
+    ctx.fill();ctx.stroke();
+    const anchor=it.polygon?it.polygon[0]:it.center;
+    if(anchor){ctx.fillStyle=st.line;ctx.font=(12/S)+'px sans-serif';ctx.fillText(it.name||it.kind,anchor[0]+3/S,anchor[1]-5/S);}
+  });
+  if(cur.length){
+    ctx.strokeStyle='#8A3410';ctx.lineWidth=2/S;ctx.beginPath();
+    cur.forEach((p,j)=>j?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
+    if(preview)ctx.lineTo(preview[0],preview[1]);
+    ctx.stroke();
+    cur.forEach((p,j)=>{
+      ctx.fillStyle=j===0?'#8A3410':'#FFFCF5';ctx.strokeStyle='#8A3410';ctx.lineWidth=1.5/S;
+      ctx.beginPath();ctx.arc(p[0],p[1],4/S,0,Math.PI*2);ctx.fill();ctx.stroke();
+    });
+  }
+  ctx.restore();
+}
+function renderList(){
+  const box=$('list');box.innerHTML='';
+  items.forEach((it,i)=>{
+    const row=document.createElement('div');row.className='item'+(i===sel?' sel':'');
+    const sw=document.createElement('span');sw.className='sw';sw.style.background=(STYLE[it.kind]||STYLE.wall_base).line;
+    const t=document.createElement('span');t.className='txt';t.textContent=it.name||it.kind;
+    const k=document.createElement('span');k.className='kind';k.textContent=it.kind;
+    const del=document.createElement('button');del.textContent='×';del.title='删除';
+    del.onclick=e=>{e.stopPropagation();items.splice(i,1);sel=-1;renderList();draw();};
+    row.onclick=()=>{sel=i;renderList();draw();};
+    row.append(sw,t,k,del);box.append(row);
+  });
+}
+function closePoly(){
+  if(cur.length<3){toast('至少需要 3 个顶点');return;}
+  items.push({kind:$('kind').value,name:$('name').value.trim()||defaultName($('kind').value),polygon:cur.map(p=>p.slice())});
+  cur=[];sel=items.length-1;renderList();draw();toast('已添加多边形');
+}
+function buildOutput(){
+  const collisions=[],interactions=[];let spawn=null;
+  items.forEach(it=>{
+    if(it.kind==='spawn'){spawn=it.center.slice();return;}
+    if(it.kind==='interaction'){interactions.push({name:it.name,door:it.center.slice(),radius:it.radius});return;}
+    if(it.polygon&&it.polygon.length>2)collisions.push({kind:it.kind,name:it.name,polygon:it.polygon.map(p=>p.slice())});
+    else if(it.center)collisions.push({kind:it.kind,name:it.name,center:it.center.slice(),radius:it.radius});
+  });
+  const frag={collisions:collisions};
+  if(interactions.length)frag.interactions=interactions;
+  if(spawn)frag.spawn=spawn;
+  return {frag,collisions,interactions,spawn};
+}
+cv.addEventListener('click',e=>{
+  const p=toMap(e),kind=$('kind').value;
+  if(kind==='tree_trunk'||kind==='interaction'||kind==='spawn'){
+    const r=Number($('radius').value)||12;
+    items.push({kind:kind,name:$('name').value.trim()||defaultName(kind),center:[p[0],p[1]],radius:r});
+    cur=[];sel=items.length-1;renderList();draw();return;
+  }
+  if(cur.length>=3&&Math.hypot(p[0]-cur[0][0],p[1]-cur[0][1])<12){closePoly();return;}
+  cur.push(p);draw();
+});
+cv.addEventListener('mousemove',e=>{const p=toMap(e);$('coord').textContent='坐标 ('+p[0]+', '+p[1]+')';if(cur.length)draw(p);});
+cv.addEventListener('mouseleave',()=>{if(cur.length)draw();});
+document.addEventListener('keydown',e=>{
+  const tag=e.target.tagName;
+  if(tag==='TEXTAREA'||tag==='INPUT'||tag==='SELECT')return;
+  if(e.key==='Backspace'&&cur.length){cur.pop();draw();e.preventDefault();}
+  else if(e.key==='Escape'){cur=[];draw();}
+  else if(e.key==='Enter'){closePoly();}
+});
+$('kind').onchange=()=>{
+  const k=$('kind').value;
+  $('radius').value=(k==='interaction')?70:(k==='spawn'?14:(k==='tree_trunk'?12:12));
+  $('name').placeholder=defaultName(k);
+};
+$('grid').onchange=()=>{grid=Number($('grid').value);draw();};
+$('file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{const im=new Image();im.onload=()=>{img=im;setSize(im.naturalWidth,im.naturalHeight);toast('底图已加载 '+im.naturalWidth+'x'+im.naturalHeight);};im.src=rd.result;};
+  rd.readAsDataURL(f);
+};
+$('close').onclick=closePoly;
+$('undo').onclick=()=>{if(cur.length){cur.pop();draw();}};
+$('cancel').onclick=()=>{cur=[];draw();};
+$('del').onclick=()=>{if(sel>=0){items.splice(sel,1);sel=-1;renderList();draw();}};
+$('reset').onclick=()=>{initCanvas();toast('画布已清空');};
+$('gen').onclick=()=>{$('out').value=JSON.stringify(buildOutput().frag,null,2);toast('片段已生成');};
+$('copy').onclick=async()=>{
+  const t=$('out').value||JSON.stringify(buildOutput().frag,null,2);$('out').value=t;
+  try{await navigator.clipboard.writeText(t);}catch(err){$('out').select();document.execCommand('copy');}
+  toast('已复制到剪贴板');
+};
+$('download').onclick=()=>{
+  const o=buildOutput();
+  const full=Object.assign({},PROJECT_DATA,{size:[W,H],collisions:o.collisions,interactions:o.interactions,spawn:o.spawn||PROJECT_DATA.spawn});
+  const blob=new Blob([JSON.stringify(full,null,2)+'\n'],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='qinghecun_v7_logic.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('已下载完整逻辑文件');
+};
+$('loadproj').onclick=loadProjectData;
+$('imp').onclick=()=>{
+  try{
+    const raw=$('in').value.trim();if(!raw){toast('请先粘贴 JSON');return;}
+    const d=JSON.parse(raw);
+    const arr=Array.isArray(d)?d:(d.collisions||[]);
+    const sz=(!Array.isArray(d)&&d.size)?d.size:[W,H];
+    W=sz[0];H=sz[1];cv.width=1152;cv.height=Math.round(1152*H/W);S=cv.width/W;
+    items=arr.map(c=>norm(c,'collisions'));
+    if(!Array.isArray(d)&&d.interactions)d.interactions.forEach(c=>items.push(norm(c,'interactions')));
+    if(!Array.isArray(d)&&d.spawn)items.push({kind:'spawn',name:'出生点',center:d.spawn.slice(),radius:14});
+    cur=[];sel=-1;renderList();draw();toast('已导入 '+items.length+' 项');
+  }catch(err){toast('JSON 解析失败: '+err.message);}
+};
+initCanvas();
+</script>
+</body>
+</html>
