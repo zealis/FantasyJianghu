@@ -785,7 +785,9 @@ func _refresh_resonance() -> void:
 	var parts: Array = []
 	if float(info.get("all_pct", 0)) > 0:
 		parts.append("全属性 +%s%%" % _pct_txt(info.get("all_pct", 0)))
-	var mains: Array = info.get("main_attrs", [])
+	# 服务端可能下发 null（旧构建）或缺失：一律按空数组处理，否则类型赋值会抛错并中断渲染。
+	var mains_raw: Variant = info.get("main_attrs")
+	var mains: Array = mains_raw if mains_raw is Array else []
 	var main_pct := float(info.get("main_pct", 0))
 	if main_pct > 0 and mains.size() > 0:
 		var names: Array = []

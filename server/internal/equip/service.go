@@ -131,10 +131,15 @@ func (s *Service) HandleView(ctx context.Context, sess *session.Session, _ map[s
 }
 
 // suitView 下发品质共鸣明细，客户端只负责展示，不重算规则。
+// 空切片必须序列化成 [] 而不是 null——客户端按 Array 取用，null 会直接抛类型错误。
 func suitView(r config.SuitResult) map[string]any {
+	mainAttrs := r.MainAttrs
+	if mainAttrs == nil {
+		mainAttrs = []string{}
+	}
 	return map[string]any{
 		"tier": r.Tier, "quality": r.Quality, "count": r.Count,
-		"all_pct": r.AllPct, "main_attrs": r.MainAttrs, "main_pct": r.MainPct,
+		"all_pct": r.AllPct, "main_attrs": mainAttrs, "main_pct": r.MainPct,
 		"sub_attr": r.SubAttr, "sub_pct": r.SubPct,
 		"tweak_attr": r.TweakAttr, "tweak_pct": r.TweakPct,
 		"percent": r.Percent,

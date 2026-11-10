@@ -193,9 +193,13 @@ func (s *Service) buildList(ctx context.Context, charID int64) (map[string]any, 
 				"pdodge": st.PDodge, "pcrit": st.PCrit, "phit": st.PHit,
 			}
 			if fin.Suit.Tier > 0 {
+				mainAttrs := fin.Suit.MainAttrs
+				if mainAttrs == nil {
+					mainAttrs = []string{}
+				}
 				suitView = map[string]any{
 					"tier": fin.Suit.Tier, "quality": fin.Suit.Quality, "count": fin.Suit.Count,
-					"all_pct": fin.Suit.AllPct, "main_attrs": fin.Suit.MainAttrs,
+					"all_pct": fin.Suit.AllPct, "main_attrs": mainAttrs,
 					"main_pct": fin.Suit.MainPct,
 					"sub_attr": fin.Suit.SubAttr, "sub_pct": fin.Suit.SubPct,
 					"tweak_attr": fin.Suit.TweakAttr, "tweak_pct": fin.Suit.TweakPct,
