@@ -8,7 +8,7 @@
     1280
   ],
   "style_baseline": "全项目风格基准图；近景一图一功能区，禁止整村远景；人物 62 图内 px ≈ 门洞高 ×0.9",
-  "note": "底图换为「清河村_定稿图_扩张版13.png」1920×1280（V1.43 地图更新）；碰撞为用户在 tools/collision_editor.html 手画的 2 组 wall_base 凹多边形，把建筑、河面、农田、山体整片围合，中间留中央青石板广场与环村土路（可走约 30%，主连通块占 91%）。门洞/NPC/怪物/传送点已重新落到可达可走区。",
+  "note": "底图换为「清河村_定稿图_扩张版13.png」1920×1280（V1.43 地图更新）；碰撞为用户在 tools/collision_editor.html 手画的 2 组 wall_base 凹多边形，把建筑、河面、农田、山体整片围合，中间留中央青石板广场与环村土路（可走约 30%，主连通块占 91%）。门洞/NPC/怪物/传送点已重新落到可达可走区。 主流程内容迁移：NPC 对话/任务记账/战斗入口由 dialogues 驱动（从横版 qinghecun_logic.json 搬入），门洞热区与明雷怪物接触开战；服务端 x/y 位置同步仍为待办（坐标系不同，强制接入会把人物纠偏回横版位置）。",
   "spawn": [
     950,
     780
@@ -401,13 +401,15 @@
       "id": "hebo",
       "name": "何伯",
       "x": 780,
-      "y": 680
+      "y": 680,
+      "dialogue": "prologue_hebo"
     },
     {
       "id": "tieshan",
       "name": "教头·铁山",
       "x": 1250,
-      "y": 700
+      "y": 700,
+      "dialogue": "tieshan"
     }
   ],
   "monsters": [
@@ -421,7 +423,8 @@
       "idle_min": 3.0,
       "idle_max": 4.0,
       "move_time": 1.0,
-      "scale": 0.157
+      "scale": 0.157,
+      "battle_monster": "yelinang"
     }
   ],
   "buildings": [
@@ -447,5 +450,42 @@
       "x": 468,
       "y": 972
     }
-  ]
+  ],
+  "dialogues": {
+    "prologue_hebo": [
+      {
+        "speaker": "何伯",
+        "text": "孩子，你终于回来了……村子遭了难，你妹妹阿璇被那些余孽掳走了。"
+      },
+      {
+        "speaker": "何伯",
+        "text": "他们往临渊镇方向去了。你安葬族人后，就沿着这条路去寻她吧。"
+      },
+      {
+        "speaker": "何伯",
+        "text": "记住，江湖险恶，先学会走动与对话，莫要逞强。"
+      }
+    ],
+    "tieshan": [
+      {
+        "speaker": "教头·铁山",
+        "text": "江湖第一步，先把手练硬！老夫这木桩人随你打。",
+        "options": [
+          {
+            "text": "切磋木桩人",
+            "action": "battle:muzhuang"
+          },
+          {
+            "text": "4v4 演练（感电 / 反伤）",
+            "action": "battle:drill"
+          },
+          {
+            "text": "改日再来",
+            "action": ""
+          }
+        ]
+      }
+    ]
+  },
+  "net_sync": false
 }

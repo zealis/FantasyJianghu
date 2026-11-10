@@ -28,7 +28,12 @@ func _ready() -> void:
 	var snap: Dictionary = await Network.send_and_wait(3, 1, {"map_id": "清河村"})
 	print("[live] enter scene code=", snap.get("code"))
 	WorldStore.apply_snapshot(snap)
-	await _frames(4)
+	await _frames(8)
+	# 主世界实拍：确认主流程切换后登录→进场显示的是 2.5D 俯视整图 + 既有 HUD/任务层。
+	await RenderingServer.frame_post_draw
+	var world_img := get_viewport().get_texture().get_image()
+	world_img.save_png("D:/project/Fantasy-Jianghu/client/tests/live_world.png")
+	print("[live] saved live_world.png ", world_img.get_size())
 
 	var battle: Control = main.get_node("BattleCanvas/BattleLayer")
 	print("[live] A vp=", get_viewport().get_visible_rect().size, " battle=", battle.size, " win=", get_window().size)

@@ -9,6 +9,10 @@ var move_speed := 40.0
 var idle_min := 3.0
 var idle_max := 4.0
 var move_time := 1.0
+## 接触开战的 monster_id（由地图逻辑数据注入；空则不触发，独立试点保持纯展示）。
+var battle_monster := ""
+var _cooldown := 0.0
+var _main: Node = null
 var origin_x := 0.0
 var dir := 1.0
 var _moving := false
@@ -17,9 +21,11 @@ var _timer := 0.0
 
 func _ready() -> void:
 	origin_x = position.x
+	_main = get_tree().root.find_child("Main", true, false)
 	_timer = randf_range(idle_min, idle_max)
 
 func _process(delta: float) -> void:
+	_check_encounter(delta)
 	if not _moving:
 		_timer -= delta
 		if _timer <= 0.0:
@@ -38,3 +44,17 @@ func _process(delta: float) -> void:
 	if _timer <= 0.0:
 		_moving = false
 		_timer = randf_range(idle_min, idle_max)
+
+## V1.41 明雷制：玩家接触即切入战斗（4/1）。仅主流程 Main 存在时生效，
+## 独立冒烟/实拍场景没有 Main，不会误触发网络请求。
+func _check_encounter(delta: float) -> void:
+	_cooldown = maxf(0.0, _cooldown - delta)
+	if battle_monster == "" or _cooldown > 0.0:
+		return
+	if _main == null or not _main.has_method("enter_battle"):
+		return
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null or global_position.distance_to(player.global_position) > 44.0:
+		return
+	_cooldown = 4.0
+	_main.call("enter_battle", {"monster_id": battle_monster})

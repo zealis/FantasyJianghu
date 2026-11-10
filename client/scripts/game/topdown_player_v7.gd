@@ -19,6 +19,7 @@ var _target: Vector2 = Vector2.INF
 var input_override := Vector2.ZERO
 
 func _ready() -> void:
+	add_to_group("player")
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	# 脚底小圆：人物仅 62px 高，半径 8px 与门洞/墙基线尺度相称。
 	var shape := CollisionShape2D.new()
@@ -104,6 +105,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_target = get_global_mouse_position()
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 		_target = Vector2.INF
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
+		# 承接横版 player.gd：靠近 NPC 时 E 触发对话（俯视 NPC 写入 near_npc_id）。
+		if WorldStore.near_npc_id != "":
+			WorldStore.request_dialogue(WorldStore.near_npc_id)
 
 func _physics_process(_delta: float) -> void:
 	var dir := input_override if input_override != Vector2.ZERO else _dir_from_keys()

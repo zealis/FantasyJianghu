@@ -14,9 +14,11 @@ extends Node2D
 ## 逻辑数据默认走 v7；场景可用 metadata/logic_path 指向其它版本（如扩张版 v8）。
 const DEFAULT_LOGIC := "res://data/qinghecun_v7_logic.json"
 const MonsterScript := preload("res://scripts/game/topdown_monster.gd")
+const NpcScript := preload("res://scripts/game/topdown_npc.gd")
 
 var logic: Dictionary = {}
 var _hint: Label
+var _in_main := false
 var _logic_path := DEFAULT_LOGIC
 
 func _ready() -> void:
@@ -85,36 +87,18 @@ func _build_npcs() -> void:
 	var ys := get_node_or_null("YSortLayer") as Node2D
 	if ys == null:
 		return
-	var cfg: Dictionary = logic.get("render", {})
-	var sc := float(cfg.get("sprite_scale", 0.28))
-	var idx := 0
+	var rd: Dictionary = logic.get("render", {})
 	for raw in logic.get("npcs", []):
 		var info: Dictionary = raw
 		var node := Node2D.new()
 		node.name = "NPC_" + str(info.get("id", ""))
 		node.position = Vector2(float(info.get("x", 0)), float(info.get("y", 0)))
-		var sp := Sprite2D.new()
-		var tex := load("res://assets/sprites/player/idle_0.png") as Texture2D
-		if tex != null:
-			sp.texture = tex
-			sp.scale = Vector2(sc, sc)
-			sp.position = Vector2(0, float(cfg.get("sprite_offset_y", -32)))
-			sp.modulate = Color(0.82, 0.92, 1.0) if idx == 0 else Color(1.0, 0.90, 0.76)
-			node.add_child(sp)
-		var lab := Label.new()
-		lab.text = str(info.get("name", "?"))
-		lab.position = Vector2(-40, -96)
-		lab.custom_minimum_size = Vector2(80, 20)
-		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lab.add_theme_font_size_override("font_size", 12)
-		lab.add_theme_color_override("font_color", Color("F6EFDF"))
-		var plate := StyleBoxFlat.new()
-		plate.bg_color = Color(0.12, 0.10, 0.08, 0.78)
-		plate.set_corner_radius_all(4)
-		lab.add_theme_stylebox_override("normal", plate)
-		node.add_child(lab)
+		# 承接横版 npc.gd：靠近显示「E 对话」、点按/E 触发 WorldStore 对话与任务记账。
+		node.set_script(NpcScript)
+		node.set("npc_id", str(info.get("id", "")))
+		node.set("cfg", info)
+		node.set("render", rd)
 		ys.add_child(node)
-		idx += 1
 
 func _build_monsters() -> void:
 	var ys := get_node_or_null("YSortLayer") as Node2D
@@ -142,6 +126,8 @@ func _build_monsters() -> void:
 		node.set("idle_min", float(m.get("idle_min", 3.0)))
 		node.set("idle_max", float(m.get("idle_max", 4.0)))
 		node.set("move_time", float(m.get("move_time", 1.0)))
+		# V1.41 明雷接触开战：仅在主流程（有 Main 节点）时生效，独立试点不触发。
+		node.set("battle_monster", str(m.get("battle_monster", "")))
 		ys.add_child(node)
 
 func _setup_player_and_camera() -> void:
@@ -163,12 +149,14 @@ func _setup_player_and_camera() -> void:
 
 func _build_hint() -> void:
 	var canvas := CanvasLayer.new()
+	canvas.layer = 3  # 主流程 UILayer 之上、战斗/对话层之下
 	add_child(canvas)
+	_in_main = get_tree().root.find_child("DialogueLayer", true, false) != null
 	_hint = Label.new()
-	_hint.add_theme_font_size_override("font_size", 15)
+	_hint.add_theme_font_size_override("font_size", 12 if _in_main else 15)
 	_hint.add_theme_color_override("font_color", Color("F6EFDF"))
 	var panel := PanelContainer.new()
-	panel.position = Vector2(12, 10)
+	panel.position = Vector2(430, 660) if _in_main else Vector2(12, 10)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.12, 0.10, 0.08, 0.80)
 	sb.set_corner_radius_all(6)
@@ -186,6 +174,9 @@ func _refresh_hint() -> void:
 		return
 	var p := get_node_or_null("YSortLayer/Player") as CharacterBody2D
 	var xy := p.position if p != null else Vector2.ZERO
+	if _in_main:
+		_hint.text = "WASD 移动 | E 对话 | 左键点按 | 坐标 (%d, %d)" % [int(xy.x), int(xy.y)]
+		return
 	var label := str(logic.get("map_label", "清河村 · 2.5D 斜俯视"))
 	var z := float(logic.get("camera", {}).get("zoom", 1.6))
 	var ch := int(logic.get("render", {}).get("character_height_px", 62))

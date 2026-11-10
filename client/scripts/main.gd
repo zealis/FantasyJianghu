@@ -2,6 +2,9 @@ extends Node
 ## 主流程：登录面板 → 进场快照 → 显现世界/HUD（前端规范 §3.1 场景组织）。
 
 func _ready() -> void:
+	# 主世界已切到 2.5D 俯视扩张版：对话/任务/热区数据改读 v8 逻辑文件。
+	# 横版 qinghecun.tscn 与其逻辑数据保留存档，改回 World 的 ext_resource 即可回退。
+	SceneLogic.current_path = "res://data/qinghecun_v8_logic.json"
 	$World.visible = false
 	$UILayer.visible = false
 	$DialogueLayer.visible = false
