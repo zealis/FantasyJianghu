@@ -28,6 +28,13 @@ func _ready() -> void:
 	var snap: Dictionary = await Network.send_and_wait(3, 1, {"map_id": "清河村"})
 	print("[live] enter scene code=", snap.get("code"))
 	WorldStore.apply_snapshot(snap)
+	# 二维坐标系验收：快照 self/bounds/spawn + 一次真实 3/2 移动回包必须带 y。
+	print("[live] 2D self=(", WorldStore.self_x, ",", WorldStore.self_y,
+		") bounds_y=", WorldStore.bounds_y, " spawn=", WorldStore.spawn)
+	var mv: Dictionary = await Network.send_and_wait(3, 2,
+		{"x": WorldStore.self_x + 40, "y": WorldStore.self_y - 30})
+	print("[live] 2D move resp=", mv)
+	WorldStore.apply_snapshot(snap)
 	await _frames(8)
 	# 主世界实拍：确认主流程切换后登录→进场显示的是 2.5D 俯视整图 + 既有 HUD/任务层。
 	await RenderingServer.frame_post_draw

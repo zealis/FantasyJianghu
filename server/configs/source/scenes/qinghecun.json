@@ -1,43 +1,47 @@
 {
   "map_id": "清河村",
-  "texture": "res://assets/maps/qinghecun.png",
-  "width": 2352,
-  "height": 1008,
-  "ground_y": 900,
+  "texture": "res://assets/maps/qinghecun_v8.png",
+  "width": 1920,
+  "height": 1280,
+  "ground_y": 780,
   "walk": {
-    "x_min": 80,
-    "x_max": 2272
+    "x_min": 0,
+    "x_max": 1920,
+    "y_min": 0,
+    "y_max": 1280
   },
   "camera": {
-    "top": 288,
-    "bottom": 1008
+    "top": 0,
+    "bottom": 1280
   },
   "npcs": [
     {
       "id": "hebo",
       "name": "何伯",
-      "x": 1560,
+      "x": 780,
+      "y": 680,
       "dialogue": "prologue_hebo"
     },
     {
       "id": "tieshan",
       "name": "教头·铁山",
-      "x": 1900,
+      "x": 1250,
+      "y": 700,
       "dialogue": "tieshan"
     }
   ],
   "buildings": [
     {
-      "name": "铁匠铺",
-      "x": 560
+      "name": "村中大宅",
+      "x": 1130
     },
     {
-      "name": "村长家",
-      "x": 1560
+      "name": "东田小院",
+      "x": 1500
     },
     {
-      "name": "石桥",
-      "x": 2100
+      "name": "南舍",
+      "x": 1400
     }
   ],
   "dialogues": {
@@ -54,7 +58,30 @@
         "speaker": "何伯",
         "text": "记住，江湖险恶，先学会走动与对话，莫要逞强。"
       }
+    ],
+    "tieshan": [
+      {
+        "speaker": "教头·铁山",
+        "text": "江湖第一步，先把手练硬！老夫这木桩人随你打。",
+        "options": [
+          {
+            "text": "切磋木桩人",
+            "action": "battle:muzhuang"
+          },
+          {
+            "text": "4v4 演练（感电 / 反伤）",
+            "action": "battle:drill"
+          },
+          {
+            "text": "改日再来",
+            "action": ""
+          }
+        ]
+      }
     ]
   },
-  "type": "town"
+  "type": "town",
+  "spawn_x": 950,
+  "spawn_y": 780,
+  "legacy_ground_y": 900
 }

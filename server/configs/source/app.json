@@ -6,7 +6,8 @@
   "move_tolerance": 16,
   "spawn": {
     "map_id": "清河村",
-    "x": 400
+    "x": 950,
+    "y": 780
   },
   "factions": [
     "断岳剑宗",

@@ -17,9 +17,15 @@ var _skin_key := ""
 var _target: Vector2 = Vector2.INF
 ## 测试/实拍用的输入注入（空值时读真实键盘）。
 var input_override := Vector2.ZERO
+## 服务端位置同步（V1.43 坐标系改造后由 world 按主流程场景注入）。
+var net_sync := false
+var _report_accum := 0.0
+var _last_sent := Vector2.INF
 
 func _ready() -> void:
 	add_to_group("player")
+	WorldStore.snapshot_applied.connect(_on_snapshot_applied)
+	Network.packet_received.connect(_on_packet)
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	# 脚底小圆：人物仅 62px 高，半径 8px 与门洞/墙基线尺度相称。
 	var shape := CollisionShape2D.new()
@@ -110,7 +116,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if WorldStore.near_npc_id != "":
 			WorldStore.request_dialogue(WorldStore.near_npc_id)
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	var dir := input_override if input_override != Vector2.ZERO else _dir_from_keys()
 	if dir == Vector2.ZERO and not is_inf(_target.x):
 		var diff := _target - global_position
@@ -125,9 +131,42 @@ func _physics_process(_delta: float) -> void:
 		return
 	velocity = dir * speed
 	move_and_slide()
+	_report_move(delta)
 	if absf(dir.x) > absf(dir.y):
 		_play("walk")
 		_facing_right = dir.x > 0.0
 		_sprite.flip_h = not _facing_right
 	else:
 		_play("idle")
+
+## 进场快照：服务端权威二维坐标（俯视玩家不再被横版 ground_y 拉回）。
+func _on_snapshot_applied() -> void:
+	if not net_sync:
+		return
+	global_position = Vector2(WorldStore.self_x, WorldStore.self_y)
+	_last_sent = Vector2.INF
+	_target = Vector2.INF
+
+## 10Hz 上报 x/y；仅在位置变化且已连服时发送。
+func _report_move(delta: float) -> void:
+	if not net_sync or Network.offline:
+		return
+	_report_accum += delta
+	if _report_accum < 0.1:
+		return
+	_report_accum = 0.0
+	if _last_sent == Vector2.INF or global_position.distance_to(_last_sent) > 0.5:
+		_last_sent = global_position
+		Network.send(3, 2, {"x": global_position.x, "y": global_position.y})
+
+## 3/2 权威回包：二维偏差超容忍才纠偏；回包等于自己上次上报则视为确认。
+func _on_packet(main_code: int, sub_code: int, payload: Dictionary) -> void:
+	if main_code != 3 or sub_code != 2 or not net_sync:
+		return
+	var server_pos := Vector2(float(payload.get("x", global_position.x)), float(payload.get("y", global_position.y)))
+	if _last_sent != Vector2.INF and server_pos.distance_to(_last_sent) < 1.0:
+		return
+	if global_position.distance_to(server_pos) > 16.0:
+		global_position = server_pos
+		_target = Vector2.INF
+		_last_sent = server_pos

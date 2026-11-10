@@ -27,6 +27,7 @@ type AppSettings struct {
 type Spawn struct {
 	MapID string  `json:"map_id"`
 	X     float64 `json:"x"`
+	Y     float64 `json:"y"`
 }
 
 // SceneLogic 为"场景图与路径/热区逻辑数据分离"的服务端逻辑数据（§4 world）。
@@ -37,6 +38,11 @@ type SceneLogic struct {
 	Width     float64         `json:"width"`
 	Height    float64         `json:"height"`
 	GroundY   float64         `json:"ground_y"`
+	SpawnX    float64         `json:"spawn_x"`
+	SpawnY    float64         `json:"spawn_y"`
+	// LegacyGroundY 为旧横版地图的 ground_y；存档 y 恰等于它时视为过期坐标，
+	// 进场自动迁移到二维出生点（俯视改造用，0 表示不做迁移）。
+	LegacyGroundY float64 `json:"legacy_ground_y"`
 	Walk      WalkRange       `json:"walk"`
 	Camera    CameraRange     `json:"camera"`
 	NPCs      []SceneNPC      `json:"npcs"`
@@ -47,6 +53,8 @@ type SceneLogic struct {
 type WalkRange struct {
 	XMin float64 `json:"x_min"`
 	XMax float64 `json:"x_max"`
+	YMin float64 `json:"y_min"`
+	YMax float64 `json:"y_max"`
 }
 
 type CameraRange struct {
@@ -58,6 +66,7 @@ type SceneNPC struct {
 	ID       string  `json:"id"`
 	Name     string  `json:"name"`
 	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
 	Dialogue string  `json:"dialogue"`
 }
 
@@ -188,6 +197,10 @@ func Validate(d Data) error {
 		}
 		if s.GroundY < 0 || s.GroundY > s.Height {
 			return fmt.Errorf("场景 %s ground_y %v 越界", s.MapID, s.GroundY)
+		}
+		ymin, ymax := s.YBounds()
+		if ymin >= ymax || ymin < 0 || ymax > s.Height {
+			return fmt.Errorf("场景 %s walk y 区间非法: [%v, %v] / 高 %v", s.MapID, ymin, ymax, s.Height)
 		}
 		ids := map[string]bool{}
 		for _, n := range s.NPCs {
@@ -328,4 +341,37 @@ func (d Data) CategoryOf(faction string) string {
 		}
 	}
 	return ""
+}
+
+// YBounds 返回二维可走 y 边界；旧横版配置未写 y_min/y_max 时退化为 [0, Height]。
+func (s SceneLogic) YBounds() (float64, float64) {
+	if s.Walk.YMax <= s.Walk.YMin {
+		return 0, s.Height
+	}
+	return s.Walk.YMin, s.Walk.YMax
+}
+
+// SpawnPoint 返回该场景的二维出生点；旧配置退化为 (XMin, GroundY)。
+func (s SceneLogic) SpawnPoint() (float64, float64) {
+	ymin, ymax := s.YBounds()
+	x, y := s.SpawnX, s.SpawnY
+	if x <= 0 || x > s.Width {
+		x = s.Walk.XMin
+	}
+	if y <= 0 || y < ymin || y > ymax {
+		y = s.GroundY
+	}
+	if x < s.Walk.XMin {
+		x = s.Walk.XMin
+	}
+	if x > s.Walk.XMax {
+		x = s.Walk.XMax
+	}
+	if y < ymin {
+		y = ymin
+	}
+	if y > ymax {
+		y = ymax
+	}
+	return x, y
 }

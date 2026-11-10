@@ -52,8 +52,22 @@ func (s *Service) HandleEnter(ctx context.Context, sess *session.Session, payloa
 		return nil, codeNotFound, "场景不存在"
 	}
 	scene := s.assignLine(mapID)
-	x := clamp(charVal(c.PosX, scene), scene.Logic.Walk.XMin, scene.Logic.Walk.XMax)
-	y := scene.Logic.GroundY
+	ymin, ymax := scene.Logic.YBounds()
+	spawnX, spawnY := scene.Logic.SpawnPoint()
+	x := c.PosX
+	if math.IsNaN(x) || math.IsInf(x, 0) || x <= 0 {
+		x = spawnX
+	}
+	x = clamp(x, scene.Logic.Walk.XMin, scene.Logic.Walk.XMax)
+	y := c.PosY
+	if math.IsNaN(y) || math.IsInf(y, 0) || y <= 0 || y < ymin || y > ymax {
+		y = spawnY
+	}
+	y = clamp(y, ymin, ymax)
+	// 旧横版存档迁移：y 等于旧 ground_y 的角色回到俯视二维出生点。
+	if scene.Logic.LegacyGroundY > 0 && c.PosY == scene.Logic.LegacyGroundY {
+		x, y = spawnX, spawnY
+	}
 
 	scene.mu.Lock()
 	// 快照在场者（排除本人）。
@@ -90,8 +104,10 @@ func (s *Service) HandleEnter(ctx context.Context, sess *session.Session, payloa
 func (s *Service) enterSnapshot(scene *Scene, charID int64, name string, x, y float64, others []*PlayerState) map[string]any {
 	npcs := make([]map[string]any, 0, len(scene.Logic.NPCs))
 	for _, n := range scene.Logic.NPCs {
-		npcs = append(npcs, map[string]any{"id": n.ID, "name": n.Name, "x": n.X})
+		npcs = append(npcs, map[string]any{"id": n.ID, "name": n.Name, "x": n.X, "y": n.Y})
 	}
+	ymin, ymax := scene.Logic.YBounds()
+	spawnX, spawnY := scene.Logic.SpawnPoint()
 	playerList := make([]map[string]any, 0, len(others))
 	for _, o := range others {
 		playerList = append(playerList, publicPlayerDTO(o))
@@ -101,6 +117,8 @@ func (s *Service) enterSnapshot(scene *Scene, charID int64, name string, x, y fl
 		"line_no":  scene.LineNo,
 		"ground_y": scene.Logic.GroundY,
 		"walk":     map[string]any{"x_min": scene.Logic.Walk.XMin, "x_max": scene.Logic.Walk.XMax},
+		"bounds":   map[string]any{"x_min": scene.Logic.Walk.XMin, "x_max": scene.Logic.Walk.XMax, "y_min": ymin, "y_max": ymax},
+		"spawn":    map[string]any{"x": spawnX, "y": spawnY},
 		"npcs":     npcs,
 		"self":     map[string]any{"id": charID, "name": name, "x": x, "y": y},
 		"players":  playerList,
@@ -121,6 +139,12 @@ func (s *Service) HandleMove(ctx context.Context, sess *session.Session, payload
 	if !ok || math.IsNaN(xt) || math.IsInf(xt, 0) {
 		return nil, codeGeneric, "坐标非法"
 	}
+	yt, hasY := 0.0, false
+	if raw, exists := payload["y"]; exists {
+		if v, ok := raw.(float64); ok && !math.IsNaN(v) && !math.IsInf(v, 0) {
+			yt, hasY = v, true
+		}
+	}
 	scene.mu.RLock()
 	p, inScene := scene.players[sess.CharID]
 	scene.mu.RUnlock()
@@ -136,14 +160,22 @@ func (s *Service) HandleMove(ctx context.Context, sess *session.Session, payload
 		elapsed = 0
 	}
 	allowed := s.cfg.App.MoveSpeed*math.Min(elapsed, 1.0) + s.cfg.App.MoveTolerance
-	target := clamp(xt, scene.Logic.Walk.XMin, scene.Logic.Walk.XMax)
-	if d := target - p.X; math.Abs(d) > allowed {
-		target = p.X + math.Copysign(allowed, d)
+	if !hasY {
+		yt = p.Y
 	}
-	log.Printf("move char=%d from=%.1f req=%.1f elapsed=%.2fs allowed=%.1f -> %.1f",
-		p.CharID, p.X, xt, elapsed, allowed, target)
-	p.X = target
-	p.Y = scene.Logic.GroundY
+	ymin, ymax := scene.Logic.YBounds()
+	tx := clamp(xt, scene.Logic.Walk.XMin, scene.Logic.Walk.XMax)
+	ty := clamp(yt, ymin, ymax)
+	// 二维防瞬移：欧氏距离超限则按方向等比缩回，x/y 保持同一比例，不产生斜向瞬移。
+	dx, dy := tx-p.X, ty-p.Y
+	if dist := math.Hypot(dx, dy); dist > allowed {
+		k := allowed / dist
+		tx = p.X + dx*k
+		ty = p.Y + dy*k
+	}
+	log.Printf("move char=%d from=(%.1f,%.1f) req=(%.1f,%.1f) elapsed=%.2fs allowed=%.1f -> (%.1f,%.1f)",
+		p.CharID, p.X, p.Y, xt, yt, elapsed, allowed, tx, ty)
+	p.X, p.Y = tx, ty
 	p.LastMove = now
 	p.dirty = true
 

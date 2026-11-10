@@ -23,7 +23,12 @@ static var _frame_cache: Dictionary = {}
 
 var char_id: int = 0
 var target_x: float = 0.0
+var target_y: float = 0.0
 var skin_key: String = ""
+## 横版默认 0.5/-75/-158；俯视主世界由 world_topdown_v7 注入 0.28/-32/-96。
+var sprite_scale: float = 0.5
+var sprite_offset_y: float = -75.0
+var plate_offset_y: float = -158.0
 
 var _body: Node2D
 var _sprite: AnimatedSprite2D
@@ -37,6 +42,7 @@ var _anim := ""
 func setup(id: int, display_name: String, x: float, y: float, info: Dictionary = {}) -> void:
 	char_id = id
 	target_x = x
+	target_y = y
 	position = Vector2(x, y)
 	skin_key = _resolve_skin(info)
 
@@ -45,8 +51,8 @@ func setup(id: int, display_name: String, x: float, y: float, info: Dictionary =
 	add_child(_body)
 	_sprite = AnimatedSprite2D.new()
 	_sprite.sprite_frames = _skin_frames(skin_key)
-	_sprite.scale = Vector2(0.5, 0.5)
-	_sprite.position = Vector2(0, -75)
+	_sprite.scale = Vector2(sprite_scale, sprite_scale)
+	_sprite.position = Vector2(0, sprite_offset_y)
 	_body.add_child(_sprite)
 	_play("idle")
 
@@ -62,7 +68,7 @@ func setup(id: int, display_name: String, x: float, y: float, info: Dictionary =
 	# 精灵头顶约在 -145，名牌抬到 -158 避免压住发簪。
 	_plate = Label.new()
 	_plate.text = display_name
-	_plate.position = Vector2(-40, -158)
+	_plate.position = Vector2(-40, plate_offset_y)
 	_plate.custom_minimum_size = Vector2(80, 20)
 	_plate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_plate.add_theme_font_size_override("font_size", 14)
@@ -147,10 +153,12 @@ func _apply_degradation() -> void:
 
 func _process(delta: float) -> void:
 	var dx := target_x - position.x
+	var dy := target_y - position.y
 	position.x = lerpf(position.x, target_x, minf(1.0, 8.0 * delta))
+	position.y = lerpf(position.y, target_y, minf(1.0, 8.0 * delta))
 	if _sprite == null:
 		return
-	if absf(dx) > 1.0:
+	if absf(dx) > 1.0 or absf(dy) > 1.0:
 		_sprite.flip_h = dx < 0.0
 		_play("walk")
 	else:

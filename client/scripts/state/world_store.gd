@@ -12,8 +12,13 @@ var map_peace: bool = true
 var near_npc_id: String = ""
 # 进场快照（服务端权威）：本人出生位置与场景逻辑数据。
 var self_x: float = 400.0
+var self_y: float = 900.0
 var ground_y: float = 900.0
 var walk_bounds: Vector2 = Vector2(80, 2272)
+# 俯视二维边界与出生点（服务端 3/1 bounds / spawn，缺省回落横版口径）。
+var bounds_x: Vector2 = Vector2(80, 2272)
+var bounds_y: Vector2 = Vector2(0, 1008)
+var spawn: Vector2 = Vector2(400, 900)
 var line_no: int = 1  # 当前分线（V1.27）
 # 远端玩家（服务端权威）：{char_id: {name, x, y}}
 var remote_players: Dictionary = {}
@@ -26,9 +31,15 @@ func apply_snapshot(snapshot: Dictionary) -> void:
 	current_map = str(snapshot.get("map_id", current_map))
 	var self_info: Dictionary = snapshot.get("self", {})
 	self_x = float(self_info.get("x", self_x))
+	self_y = float(self_info.get("y", self_y))
 	ground_y = float(snapshot.get("ground_y", ground_y))
 	var walk: Dictionary = snapshot.get("walk", {})
 	walk_bounds = Vector2(float(walk.get("x_min", walk_bounds.x)), float(walk.get("x_max", walk_bounds.y)))
+	var bd: Dictionary = snapshot.get("bounds", {})
+	bounds_x = Vector2(float(bd.get("x_min", walk_bounds.x)), float(bd.get("x_max", walk_bounds.y)))
+	bounds_y = Vector2(float(bd.get("y_min", bounds_y.x)), float(bd.get("y_max", bounds_y.y)))
+	var sp: Dictionary = snapshot.get("spawn", {})
+	spawn = Vector2(float(sp.get("x", self_x)), float(sp.get("y", self_y)))
 	remote_players.clear()
 	for p in snapshot.get("players", []):
 		var info: Dictionary = p

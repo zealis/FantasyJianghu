@@ -116,7 +116,12 @@ func (s *Service) HandleCreate(ctx context.Context, sess *session.Session, paylo
 	}
 	// 出生点来自配置（spawn.map_id/x + 场景 ground_y），落库供进场复用。
 	scene := s.cfg.Scenes[s.cfg.App.Spawn.MapID]
-	_ = s.characters.UpdatePosition(ctx, id, s.cfg.App.Spawn.MapID, s.cfg.App.Spawn.X, scene.GroundY)
+	spawnX := s.cfg.App.Spawn.X
+	spawnY := s.cfg.App.Spawn.Y
+	if spawnY <= 0 {
+		spawnY = scene.GroundY
+	}
+	_ = s.characters.UpdatePosition(ctx, id, s.cfg.App.Spawn.MapID, spawnX, spawnY)
 	c, err := s.characters.GetCharacter(ctx, id)
 	if err != nil {
 		return nil, codeGeneric, "角色读取失败"

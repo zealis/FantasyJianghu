@@ -41,8 +41,14 @@ func _ready() -> void:
 		var info: Dictionary = WorldStore.remote_players[id]
 		print("[live]   ", id, " name=", info.get("name"), " x=", info.get("x"),
 			" faction=", info.get("faction"), " gender=", info.get("gender"))
+	# 主流程已切到 2.5D 俯视：远端玩家挂在 YSortLayer 下（Remote_<id>），参与前后遮挡。
 	var world := main.get_node("World")
-	var nodes := world.get_node("RemotePlayers").get_children()
+	var nodes: Array = []
+	var ysort := world.get_node_or_null("YSortLayer")
+	if ysort != null:
+		for n in ysort.get_children():
+			if str(n.name).begins_with("Remote_"):
+				nodes.append(n)
 	print("[live] remote nodes=", nodes.size())
 	for n in nodes:
 		print("[live]   node ", n.name, " skin=", n.skin_key, " anim=",

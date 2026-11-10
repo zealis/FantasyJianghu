@@ -15,10 +15,12 @@ extends Node2D
 const DEFAULT_LOGIC := "res://data/qinghecun_v7_logic.json"
 const MonsterScript := preload("res://scripts/game/topdown_monster.gd")
 const NpcScript := preload("res://scripts/game/topdown_npc.gd")
+const RemotePlayerScript := preload("res://scripts/game/remote_player.gd")
 
 var logic: Dictionary = {}
 var _hint: Label
 var _in_main := false
+var _remote_nodes := {}
 var _logic_path := DEFAULT_LOGIC
 
 func _ready() -> void:
@@ -34,6 +36,8 @@ func _ready() -> void:
 	_build_monsters()
 	_setup_player_and_camera()
 	_build_hint()
+	WorldStore.remote_changed.connect(_sync_remote)
+	_sync_remote()
 
 func _build_collisions() -> void:
 	var layer := get_node_or_null("Collisions") as Node2D
@@ -137,6 +141,8 @@ func _setup_player_and_camera() -> void:
 	var spawn: Array = logic.get("spawn", [520, 700])
 	p.position = Vector2(float(spawn[0]), float(spawn[1]))
 	p.configure(logic.get("render", {}))
+	# 仅主流程开启服务端位置同步：独立冒烟/实拍场景不触碰网络。
+	p.set("net_sync", bool(logic.get("net_sync", false)) and _in_main_ready())
 	var cam := p.get_node_or_null("Camera") as Camera2D
 	if cam != null:
 		var c: Dictionary = logic.get("camera", {})
@@ -184,3 +190,40 @@ func _refresh_hint() -> void:
 
 func _process(_delta: float) -> void:
 	_refresh_hint()
+
+func _in_main_ready() -> bool:
+	return get_tree().root.find_child("DialogueLayer", true, false) != null
+
+## 同屏远端玩家：放进 YSortLayer 参与前后遮挡，按服务端权威 x/y 插值移动。
+func _sync_remote() -> void:
+	var ys := get_node_or_null("YSortLayer") as Node2D
+	if ys == null:
+		return
+	var rd: Dictionary = logic.get("render", {})
+	var sc := float(rd.get("sprite_scale", 0.28))
+	for id in WorldStore.remote_players:
+		var info: Dictionary = WorldStore.remote_players[id]
+		var node := _remote_nodes.get(id) as Node2D
+		if node == null or not is_instance_valid(node):
+			node = Node2D.new()
+			node.name = "Remote_%d" % int(id)
+			node.set_script(RemotePlayerScript)
+			node.set("sprite_scale", sc)
+			node.set("sprite_offset_y", float(rd.get("sprite_offset_y", -32)))
+			node.set("plate_offset_y", -96.0)
+			ys.add_child(node)
+			node.setup(int(id), str(info.get("name", "?")),
+					float(info.get("x", 0.0)), float(info.get("y", 0.0)), info)
+			_remote_nodes[id] = node
+		node.set("target_x", float(info.get("x", 0.0)))
+		node.set("target_y", float(info.get("y", 0.0)))
+		node.call("apply_companion", info)
+	var gone := []
+	for id in _remote_nodes:
+		if not WorldStore.remote_players.has(id):
+			var stale = _remote_nodes[id]
+			if is_instance_valid(stale):
+				stale.queue_free()
+			gone.append(id)
+	for id in gone:
+		_remote_nodes.erase(id)
