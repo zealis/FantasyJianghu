@@ -15,8 +15,7 @@
   },
   "crit": {
     "base_rate": 0.05,
-    "damage": 1.5,
-    "duanyue_bonus": 0.1
+    "damage": 1.5
   },
   "combo": {
     "extra_mult": 0.5
@@ -38,7 +37,8 @@
       "定身",
       "沉睡",
       "冰冻",
-      "混乱"
+      "混乱",
+      "封行动"
     ]
   },
   "decay": [
@@ -99,16 +99,47 @@
     "enemy_speed_pct_of_player": 9000
   },
   "specials_deferred": [
-    "shock_jump_50",
+    "ally_hit_crit_buff",
+    "armor_break_plus",
+    "bonus_vs_demon_30",
+    "bonus_vs_demon_40",
+    "cleanse_and_sealres",
+    "cleanse_control",
+    "combo_extra_segment",
+    "damage_reduce_10",
+    "dream_detonate_80",
+    "group_heal_185_cleanse",
+    "group_heal_75",
+    "heal_160_cleanse",
+    "heal_on_hit_2",
+    "hit_down_18",
+    "ignore_pdef_10",
+    "immune_shield_20",
+    "kill_refund_mp_30",
+    "low_hp_execute_200",
+    "nightmare_dot_35",
+    "patk_down_15",
+    "pdef_down_12",
+    "random_seal_15",
+    "regen_4",
+    "seal_both_65",
+    "sealres_down_20",
+    "self_heal_5",
+    "self_patk_8",
+    "shield_12",
     "shock_detonate_25",
+    "shock_jump_50",
+    "sleep_dmg_50",
+    "slow_15",
+    "speed_down_15",
+    "speed_down_20",
+    "star3_guaranteed_crit",
+    "star_bonus_25",
+    "sword_intent_2",
+    "sword_intent_consume_30",
+    "sword_intent_dmg_3",
     "taunt_1",
     "taunt_2",
-    "taunt_group",
-    "bonus_vs_demon_30",
-    "heal_on_hit_2",
-    "slow_15",
-    "shield_12",
-    "damage_reduce_10",
-    "immune_shield_20"
+    "taunt_group"
   ]
 }

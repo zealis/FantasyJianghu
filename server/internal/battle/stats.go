@@ -26,6 +26,7 @@ type UnitStats struct {
 
 	// 角色级系数（数值规范 §9.7，万分制）：由心法被动、品质共鸣微调、法宝、Buff 在第 ④ 步
 	// 按百分点累加，第 ⑤ 步按 Formula.CoeffCaps 裁剪。此前引擎无这三项，套装三项微调只能登记不生效。
+	CritDmg int // 暴击伤害加成（万分制）：心法被动「断岳剑经 +10%」，可被任何来源追加
 	Reflect int // 反伤系数（静态来源）：受击按实际伤害回弹给攻击者
 	// 金刚印：受击叠层，每层再加 ReflectPerStack（万分制），最多 ReflectMaxStacks 层。
 	// 属于门派心法被动，与「共鸣微调」分列，1 级裸装即有。
@@ -303,8 +304,15 @@ func mergePercents(suit map[string]float64, p PassiveBonus) map[string]float64 {
 	add("hp", p.HPPct)
 	add("pdef", p.PDefPct)
 	add("mdef", p.MDefPct)
+	add("patk", p.PAtkPct)
 	add("matk", p.MAtkPct)
 	add("heal_bonus", p.HealBonusPct)
+	add("pcrit", p.PCritPct)
+	add("mcrit", p.MCritPct)
+	add("pcombo", p.PComboPct)
+	add("sealhit", p.SealHitPct)
+	add("pdodge", p.PDodgePct)
+	add("crit_dmg", p.CritDmgPct)
 	return out
 }
 
@@ -343,6 +351,7 @@ func applyEquipAndSuit(st UnitStats, equip map[string]int, pct map[string]float6
 	st.PCombo = rate(st.PCombo, "pcombo")
 	st.SealHit = rate(st.SealHit, "sealhit")
 	st.PDodge = rate(st.PDodge, "pdodge")
+	st.CritDmg = rate(st.CritDmg, "crit_dmg")
 	// 角色级系数：百分点 → 万分制，再按上限裁剪（§9.7）。
 	st.Reflect = rate(st.Reflect, "reflect")
 	st.HealBonus = rate(st.HealBonus, "heal_bonus")

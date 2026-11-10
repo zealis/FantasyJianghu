@@ -286,10 +286,9 @@ func (b *Battle) damageRollTyped(atk, tgt *Unit, mult float64, levelDiff int, at
 		}
 		if b.f64() < critRate {
 			crit = true
-			critB := b.F.Crit.Damage - 1
-			if atk.Faction == "断岳剑宗" {
-				critB += b.F.Crit.DuanyueBonus
-			}
+			// 暴击伤害 = 公式基线 + 角色级暴伤加成（心法被动，断岳剑经 +10%）。
+			// 此前按门派名硬编码剑宗 +0.1，现改为属性来源，任何门派/装备都能加。
+			critB := b.F.Crit.Damage - 1 + float64(a.CritDmg)/10000.0
 			merged *= 1 + critB
 		}
 		if b.f64() < float64(a.PCombo)/10000.0 {

@@ -1,0 +1,140 @@
+{
+  "faction": "织梦谷",
+  "source": "《秘籍配置表》V1.1 §7（织梦谷 · 封印/幻术软控）",
+  "skills": [
+    {
+      "id": "dameng_xinjing",
+      "name": "大梦心经",
+      "category": "心法",
+      "level_req": 1,
+      "mp_cost": 0,
+      "passive": {
+        "sealhit_pct": 500
+      }
+    },
+    {
+      "id": "rumeng_yin",
+      "name": "入梦引",
+      "category": "单体",
+      "level_req": 10,
+      "mp_cost": 140,
+      "control": {
+        "type": "沉睡",
+        "rate": 75,
+        "duration": 1
+      },
+      "special": "sleep_dmg_50"
+    },
+    {
+      "id": "mengyan_chanshen",
+      "name": "梦魇缠身",
+      "category": "单体",
+      "level_req": 20,
+      "mp_cost": 160,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 90
+        }
+      ],
+      "targets": 1,
+      "special": "nightmare_dot_35"
+    },
+    {
+      "id": "huangliang_yimeng",
+      "name": "黄粱一梦",
+      "category": "群体",
+      "level_req": 30,
+      "mp_cost": 290,
+      "targets": 2,
+      "control": {
+        "type": "沉睡",
+        "rate": 60,
+        "duration": 1
+      }
+    },
+    {
+      "id": "shenlou_huanjing",
+      "name": "蜃楼幻境",
+      "category": "群体",
+      "level_req": 50,
+      "mp_cost": 410,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 70
+        }
+      ],
+      "targets": 2,
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      },
+      "control": {
+        "type": "混乱",
+        "rate": 45,
+        "duration": 1
+      }
+    },
+    {
+      "id": "mixin_zhou",
+      "name": "迷心咒",
+      "category": "控制",
+      "level_req": 25,
+      "mp_cost": 160,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 40
+        }
+      ],
+      "targets": 1,
+      "special": "hit_down_18"
+    },
+    {
+      "id": "shimeng",
+      "name": "蚀梦",
+      "category": "控制",
+      "level_req": 45,
+      "mp_cost": 210,
+      "targets": 1,
+      "special": "sealres_down_20"
+    },
+    {
+      "id": "xingmeng_ling",
+      "name": "醒梦铃",
+      "category": "辅助",
+      "level_req": 15,
+      "mp_cost": 140,
+      "buff_self": {
+        "stat": "speed_pct",
+        "value": 800,
+        "turns": 2
+      },
+      "buff_group": true,
+      "special": "cleanse_control"
+    },
+    {
+      "id": "mengyou_bu",
+      "name": "梦游步",
+      "category": "辅助",
+      "level_req": 35,
+      "mp_cost": 220,
+      "buff_self": {
+        "stat": "pdodge_pct",
+        "value": 1200,
+        "turns": 3
+      },
+      "buff_group": true
+    },
+    {
+      "id": "dameng_sanqian",
+      "name": "大梦三千",
+      "category": "绝学",
+      "level_req": 80,
+      "mp_cost": 750,
+      "targets": 2,
+      "special": "dream_detonate_80"
+    }
+  ]
+}

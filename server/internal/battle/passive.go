@@ -7,11 +7,20 @@ import "fantasy-jianghu/server/internal/config"
 // 心法被动是**门派身份**：1 级裸装即生效，不依赖装备与品质共鸣。
 // 此前引擎完全没读 passive（惊雷宝典的法攻 +3% 一直空转），本轮一并接上。
 type PassiveBonus struct {
+	PAtkPct      int // 物攻 %
+	MAtkPct      int // 法攻 %
 	HPPct        int // 生命 %
 	PDefPct      int // 物防 %
 	MDefPct      int // 法防 %
-	MAtkPct      int // 法攻 %
 	HealBonusPct int // 治疗加成 %
+
+	// 概率型（万分制）
+	PCritPct   int // 暴击率
+	MCritPct   int // 法暴率
+	PComboPct  int // 连击率
+	SealHitPct int // 封印命中
+	PDodgePct  int // 闪避
+	CritDmgPct int // 暴击伤害
 
 	// 金刚印（金刚不坏体）：受击叠层，每层反伤 +ReflectPerStack，最多 ReflectMaxStacks 层。
 	ReflectPerStack  int
@@ -27,11 +36,18 @@ func CollectPassives(skills []config.SkillDef, faction string, level int) Passiv
 			continue
 		}
 		p := sk.Passive
+		out.PAtkPct += p.PAtkPct
+		out.MAtkPct += p.MAtkPct
 		out.HPPct += p.HPPct
 		out.PDefPct += p.PDefPct
 		out.MDefPct += p.MDefPct
-		out.MAtkPct += p.MAtkPct
 		out.HealBonusPct += p.HealBonusPct
+		out.PCritPct += p.PCritPct
+		out.MCritPct += p.MCritPct
+		out.PComboPct += p.PComboPct
+		out.SealHitPct += p.SealHitPct
+		out.PDodgePct += p.PDodgePct
+		out.CritDmgPct += p.CritDmgPct
 		// 多层反伤被动取最强一档（当前只有金刚不坏体一本，留出扩展余地）。
 		if p.ReflectPerStack > out.ReflectPerStack {
 			out.ReflectPerStack = p.ReflectPerStack

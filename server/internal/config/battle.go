@@ -23,9 +23,8 @@ type DamageParams struct {
 
 // CritParams 暴击（公式表 §2）。
 type CritParams struct {
-	BaseRate     float64 `json:"base_rate"`
-	Damage       float64 `json:"damage"`
-	DuanyueBonus float64 `json:"duanyue_bonus"`
+	BaseRate float64 `json:"base_rate"`
+	Damage   float64 `json:"damage"`
 }
 
 // HitParams 命中与闪避（公式表 §3）。
@@ -193,11 +192,20 @@ type SkillDef struct {
 // PassiveDef 为心法/绝学被动（数值规范 §1.3 第 ④ 步来源之一，万分制）。
 // 心法被动是**门派身份**：1 级裸装即可生效，不依赖装备与共鸣。
 type PassiveDef struct {
+	PAtkPct      int `json:"patk_pct"`       // 物攻 +%
 	MAtkPct      int `json:"matk_pct"`       // 法攻 +%
 	HPPct        int `json:"hp_pct"`         // 生命 +%
 	PDefPct      int `json:"pdef_pct"`       // 物防 +%
 	MDefPct      int `json:"mdef_pct"`       // 法防 +%
 	HealBonusPct int `json:"heal_bonus_pct"` // 治疗加成 +%（玄水心法）
+
+	// 概率型（万分制，与品质共鸣同口径按百分点相加）——心法流派身份所在。
+	PCritPct   int `json:"pcrit_pct"`    // 暴击率 +%
+	MCritPct   int `json:"mcrit_pct"`    // 法暴率 +%
+	PComboPct  int `json:"pcombo_pct"`   // 连击率 +%
+	SealHitPct int `json:"sealhit_pct"`  // 封印命中 +%
+	PDodgePct  int `json:"pdodge_pct"`   // 闪避 +%
+	CritDmgPct int `json:"crit_dmg_pct"` // 暴击伤害 +%（断岳剑经）
 
 	// 金刚印：受击叠层，每层反伤 +reflect_per_stack，最多 reflect_max_stacks 层。
 	// 禅院「挨打就有反伤」的来源，与品质共鸣（微调）分列，互不替代。
@@ -353,6 +361,18 @@ func validateBattle(b BattleData) error {
 			factionSet[f] = true
 		}
 	}
+	heartOf := map[string]int{}
+	for _, sk := range b.Skills {
+		if sk.Category == "心法" && sk.LevelReq <= 1 {
+			heartOf[sk.Faction]++
+		}
+	}
+	for f := range factionSet {
+		if heartOf[f] != 1 {
+			return fmt.Errorf("门派 %s 必须且只能有 1 本 1 级心法（心法是被动门派身份），实际 %d 本",
+				f, heartOf[f])
+		}
+	}
 	for _, sk := range b.Skills {
 		if sk.Faction == "" {
 			return fmt.Errorf("秘籍 %s 缺所属门派", sk.ID)
@@ -371,7 +391,9 @@ func validateBattle(b BattleData) error {
 			for name, v := range map[string]int{
 				"matk_pct": p.MAtkPct, "hp_pct": p.HPPct, "pdef_pct": p.PDefPct,
 				"mdef_pct": p.MDefPct, "heal_bonus_pct": p.HealBonusPct,
-				"reflect_per_stack": p.ReflectPerStack,
+				"pcrit_pct": p.PCritPct, "mcrit_pct": p.MCritPct, "pcombo_pct": p.PComboPct,
+				"sealhit_pct": p.SealHitPct, "pdodge_pct": p.PDodgePct,
+				"crit_dmg_pct": p.CritDmgPct, "reflect_per_stack": p.ReflectPerStack,
 			} {
 				if v < 0 || v > 10000 {
 					return fmt.Errorf("秘籍 %s 被动 %s=%d 非法（万分制 0..10000）", sk.ID, name, v)

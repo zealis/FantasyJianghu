@@ -1,0 +1,147 @@
+{
+  "faction": "缚灵符观",
+  "source": "《秘籍配置表》V1.1 §6（缚灵符观 · 封印/符箓硬控）",
+  "skills": [
+    {
+      "id": "zhenmo_fujing",
+      "name": "镇魔符经",
+      "category": "心法",
+      "level_req": 1,
+      "mp_cost": 0,
+      "passive": {
+        "sealhit_pct": 800
+      }
+    },
+    {
+      "id": "fuling_fulu",
+      "name": "缚灵符箓",
+      "category": "单体",
+      "level_req": 10,
+      "mp_cost": 130,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 120
+        }
+      ],
+      "targets": 1,
+      "control": {
+        "type": "封行动",
+        "rate": 30,
+        "duration": 1
+      }
+    },
+    {
+      "id": "zhuomo_fu",
+      "name": "诛魔符",
+      "category": "单体",
+      "level_req": 20,
+      "mp_cost": 170,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 160
+        }
+      ],
+      "targets": 1,
+      "special": "bonus_vs_demon_40"
+    },
+    {
+      "id": "wanfu_tianlu",
+      "name": "万符天箓",
+      "category": "群体",
+      "level_req": 30,
+      "mp_cost": 280,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 75
+        }
+      ],
+      "targets": 2,
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      },
+      "special": "random_seal_15"
+    },
+    {
+      "id": "wulei_fuzhen",
+      "name": "五雷符阵",
+      "category": "群体",
+      "level_req": 50,
+      "mp_cost": 400,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 105
+        }
+      ],
+      "targets": 2,
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      }
+    },
+    {
+      "id": "dingshen_fu",
+      "name": "定身符",
+      "category": "控制",
+      "level_req": 25,
+      "mp_cost": 170,
+      "control": {
+        "type": "封行动",
+        "rate": 80,
+        "duration": 1
+      }
+    },
+    {
+      "id": "fengmo_yin",
+      "name": "封魔印",
+      "category": "控制",
+      "level_req": 45,
+      "mp_cost": 230,
+      "control": {
+        "type": "封技能",
+        "rate": 75,
+        "duration": 2
+      }
+    },
+    {
+      "id": "qingxin_fu",
+      "name": "清心符",
+      "category": "辅助",
+      "level_req": 15,
+      "mp_cost": 140,
+      "special": "cleanse_and_sealres"
+    },
+    {
+      "id": "jinjia_fu",
+      "name": "金甲符",
+      "category": "辅助",
+      "level_req": 35,
+      "mp_cost": 220,
+      "buff_self": {
+        "stat": "pdef_pct",
+        "value": 1200,
+        "turns": 3
+      },
+      "buff_group": true
+    },
+    {
+      "id": "tianlu_zhenmo",
+      "name": "天箓镇魔",
+      "category": "绝学",
+      "level_req": 80,
+      "mp_cost": 700,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 80
+        }
+      ],
+      "targets": 2,
+      "special": "seal_both_65"
+    }
+  ]
+}

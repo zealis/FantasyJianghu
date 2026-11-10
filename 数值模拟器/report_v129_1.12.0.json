@@ -1,0 +1,527 @@
+{
+  "config_version": "1.12.0",
+  "checked": 85,
+  "failed": 0,
+  "verdict": "PASS",
+  "seal_calibration": "PASS",
+  "perfect_tier_totals": {
+    "断岳剑宗": {
+      "patk": 9.0,
+      "pcrit": 6.5
+    },
+    "惊雷殿": {
+      "matk": 9.0,
+      "mcrit": 6.5
+    },
+    "缚灵符观": {
+      "speed": 9.0,
+      "sealhit": 10.0
+    },
+    "织梦谷": {
+      "speed": 9.0,
+      "sealhit": 7.0,
+      "pdodge": 3.0
+    }
+  },
+  "seal_rows": [
+    {
+      "base_rate": 60.0,
+      "seal_res": 0.0,
+      "without_set": 0.6,
+      "with_set": 0.7,
+      "abs_gain": 10.0,
+      "rel_gain_pct": 16.67
+    },
+    {
+      "base_rate": 60.0,
+      "seal_res": 0.1,
+      "without_set": 0.54,
+      "with_set": 0.63,
+      "abs_gain": 9.0,
+      "rel_gain_pct": 16.67
+    },
+    {
+      "base_rate": 60.0,
+      "seal_res": 0.2,
+      "without_set": 0.48,
+      "with_set": 0.56,
+      "abs_gain": 8.0,
+      "rel_gain_pct": 16.67
+    },
+    {
+      "base_rate": 70.0,
+      "seal_res": 0.0,
+      "without_set": 0.7,
+      "with_set": 0.8,
+      "abs_gain": 10.0,
+      "rel_gain_pct": 14.29
+    },
+    {
+      "base_rate": 70.0,
+      "seal_res": 0.1,
+      "without_set": 0.63,
+      "with_set": 0.72,
+      "abs_gain": 9.0,
+      "rel_gain_pct": 14.29
+    },
+    {
+      "base_rate": 70.0,
+      "seal_res": 0.2,
+      "without_set": 0.56,
+      "with_set": 0.64,
+      "abs_gain": 8.0,
+      "rel_gain_pct": 14.29
+    },
+    {
+      "base_rate": 80.0,
+      "seal_res": 0.0,
+      "without_set": 0.8,
+      "with_set": 0.9,
+      "abs_gain": 10.0,
+      "rel_gain_pct": 12.5
+    },
+    {
+      "base_rate": 80.0,
+      "seal_res": 0.1,
+      "without_set": 0.72,
+      "with_set": 0.81,
+      "abs_gain": 9.0,
+      "rel_gain_pct": 12.5
+    },
+    {
+      "base_rate": 80.0,
+      "seal_res": 0.2,
+      "without_set": 0.64,
+      "with_set": 0.72,
+      "abs_gain": 8.0,
+      "rel_gain_pct": 12.5
+    }
+  ],
+  "items": [
+    {
+      "item": "一档全属性底数与文档一致",
+      "ok": true,
+      "detail": "[1.0, 2.0, 3.0, 4.0, 5.0]"
+    },
+    {
+      "item": "二档系别主项底数与文档一致",
+      "ok": true,
+      "detail": "[5.0, 6.0, 7.0, 8.0, 9.0]"
+    },
+    {
+      "item": "系别 物理 副项数值与文档一致",
+      "ok": true,
+      "detail": "[1.5, 2.0, 2.5, 3.0, 3.5]"
+    },
+    {
+      "item": "系别 法术 副项数值与文档一致",
+      "ok": true,
+      "detail": "[1.5, 2.0, 2.5, 3.0, 3.5]"
+    },
+    {
+      "item": "系别 封印 副项数值与文档一致",
+      "ok": true,
+      "detail": "[3.0, 4.0, 5.0, 6.0, 7.0]"
+    },
+    {
+      "item": "系别 肉盾 副项数值与文档一致",
+      "ok": true,
+      "detail": "[5.0, 6.0, 7.0, 8.0, 9.0]"
+    },
+    {
+      "item": "门派 断岳剑宗 微调属性 = pcrit",
+      "ok": true,
+      "detail": "pcrit"
+    },
+    {
+      "item": "门派 断岳剑宗 微调幅度同档同幅（[1.0, 1.5, 2.0, 2.5, 3.0]）",
+      "ok": true,
+      "detail": "[1.0, 1.5, 2.0, 2.5, 3.0]"
+    },
+    {
+      "item": "门派 断岳剑宗 微调不超主项一半",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "item": "门派 破军枪府 微调属性 = pcombo",
+      "ok": true,
+      "detail": "pcombo"
+    },
+    {
+      "item": "门派 破军枪府 微调幅度同档同幅（[1.0, 1.5, 2.0, 2.5, 3.0]）",
+      "ok": true,
+      "detail": "[1.0, 1.5, 2.0, 2.5, 3.0]"
+    },
+    {
+      "item": "门派 破军枪府 微调不超主项一半",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "item": "门派 惊雷殿 微调属性 = mcrit",
+      "ok": true,
+      "detail": "mcrit"
+    },
+    {
+      "item": "门派 惊雷殿 微调幅度同档同幅（[1.0, 1.5, 2.0, 2.5, 3.0]）",
+      "ok": true,
+      "detail": "[1.0, 1.5, 2.0, 2.5, 3.0]"
+    },
+    {
+      "item": "门派 惊雷殿 微调不超主项一半",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "item": "门派 璇玑星宫 微调属性 = charge_dmg",
+      "ok": true,
+      "detail": "charge_dmg"
+    },
+    {
+      "item": "门派 璇玑星宫 微调幅度同档同幅（[1.0, 1.5, 2.0, 2.5, 3.0]）",
+      "ok": true,
+      "detail": "[1.0, 1.5, 2.0, 2.5, 3.0]"
+    },
+    {
+      "item": "门派 璇玑星宫 微调不超主项一半",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "item": "门派 缚灵符观 微调属性 = sealhit",
+      "ok": true,
+      "detail": "sealhit"
+    },
+    {
+      "item": "门派 缚灵符观 微调幅度同档同幅（[1.0, 1.5, 2.0, 2.5, 3.0]）",
+      "ok": true,
+      "detail": "[1.0, 1.5, 2.0, 2.5, 3.0]"
+    },
+    {
+      "item": "门派 缚灵符观 微调不超主项一半",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "item": "门派 织梦谷 微调属性 = pdodge",
+      "ok": true,
+      "detail": "pdodge"
+    },
+    {
+      "item": "门派 织梦谷 微调幅度同档同幅（[1.0, 1.5, 2.0, 2.5, 3.0]）",
+      "ok": true,
+      "detail": "[1.0, 1.5, 2.0, 2.5, 3.0]"
+    },
+    {
+      "item": "门派 织梦谷 微调不超主项一半",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "item": "门派 金刚禅院 微调属性 = reflect",
+      "ok": true,
+      "detail": "reflect"
+    },
+    {
+      "item": "门派 金刚禅院 微调幅度同档同幅（[1.0, 1.5, 2.0, 2.5, 3.0]）",
+      "ok": true,
+      "detail": "[1.0, 1.5, 2.0, 2.5, 3.0]"
+    },
+    {
+      "item": "门派 金刚禅院 微调不超主项一半",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "item": "门派 玄水宫 微调属性 = heal_bonus",
+      "ok": true,
+      "detail": "heal_bonus"
+    },
+    {
+      "item": "门派 玄水宫 微调幅度同档同幅（[1.0, 1.5, 2.0, 2.5, 3.0]）",
+      "ok": true,
+      "detail": "[1.0, 1.5, 2.0, 2.5, 3.0]"
+    },
+    {
+      "item": "门派 玄水宫 微调不超主项一半",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "item": "完美档 剑宗暴击 = 3.5 + 3 = 6.5%",
+      "ok": true,
+      "detail": "6.5"
+    },
+    {
+      "item": "完美档 雷殿法暴 = 3.5 + 3 = 6.5%",
+      "ok": true,
+      "detail": "6.5"
+    },
+    {
+      "item": "完美档 符观封印命中 = 7 + 3 = 10%",
+      "ok": true,
+      "detail": "10.0"
+    },
+    {
+      "item": "完美档 织梦谷只叠闪避（速度不叠主项）",
+      "ok": true,
+      "detail": "闪避 3.0 / 速度 9.0"
+    },
+    {
+      "item": "二档取代一档（不再叠加全属性 +5.0%）",
+      "ok": true,
+      "detail": "hp/mp/法攻等均未被抬"
+    },
+    {
+      "item": "门派 断岳剑宗 微调不落在系别主项上（物理）",
+      "ok": true,
+      "detail": "pcrit"
+    },
+    {
+      "item": "门派 破军枪府 微调不落在系别主项上（物理）",
+      "ok": true,
+      "detail": "pcombo"
+    },
+    {
+      "item": "门派 惊雷殿 微调不落在系别主项上（法术）",
+      "ok": true,
+      "detail": "mcrit"
+    },
+    {
+      "item": "门派 璇玑星宫 微调不落在系别主项上（法术）",
+      "ok": true,
+      "detail": "charge_dmg"
+    },
+    {
+      "item": "门派 缚灵符观 微调不落在系别主项上（封印）",
+      "ok": true,
+      "detail": "sealhit"
+    },
+    {
+      "item": "门派 织梦谷 微调不落在系别主项上（封印）",
+      "ok": true,
+      "detail": "pdodge"
+    },
+    {
+      "item": "门派 金刚禅院 微调不落在系别主项上（肉盾）",
+      "ok": true,
+      "detail": "reflect"
+    },
+    {
+      "item": "门派 玄水宫 微调不落在系别主项上（肉盾）",
+      "ok": true,
+      "detail": "heal_bonus"
+    },
+    {
+      "item": "套装加成合计未突破乘区上限 2.25",
+      "ok": true,
+      "detail": "峰值 +10.0%（系数 1.10）"
+    },
+    {
+      "item": "胜场分档与文档一致（10/30/60/100 → 1/2/3/4%）",
+      "ok": true,
+      "detail": "[(10, 1.0), (30, 2.0), (60, 3.0), (100, 4.0)]"
+    },
+    {
+      "item": "胜场加成封顶 4% 不盖过称号四档 +5%",
+      "ok": true,
+      "detail": "4.0"
+    },
+    {
+      "item": "分档严格递增",
+      "ok": true,
+      "detail": "[10, 30, 60, 100]"
+    },
+    {
+      "item": "角色级系数上限 reflect_cap_pct 与文档一致（50）",
+      "ok": true,
+      "detail": "reflect_cap_pct=5000"
+    },
+    {
+      "item": "角色级系数上限 heal_bonus_cap_pct 与文档一致（60）",
+      "ok": true,
+      "detail": "heal_bonus_cap_pct=6000"
+    },
+    {
+      "item": "系数上限为万分制且不超过 100%",
+      "ok": true,
+      "detail": "{'reflect_cap_pct': 5000, 'heal_bonus_cap_pct': 6000}"
+    },
+    {
+      "item": "禅院反伤已接线并放行（implemented=true）",
+      "ok": true,
+      "detail": "implemented=True"
+    },
+    {
+      "item": "玄水宫 的 heal_bonus 仍标未生效（治疗秘籍未入包）",
+      "ok": true,
+      "detail": "implemented=False"
+    },
+    {
+      "item": "璇玑星宫 的 charge_dmg 仍标未生效（星辉机制未实现）",
+      "ok": true,
+      "detail": "implemented=False"
+    },
+    {
+      "item": "禅院反伤完美档 3% 未触碰 50% 上限",
+      "ok": true,
+      "detail": "反伤 3.0% / 上限 50%"
+    },
+    {
+      "item": "金刚不坏体 生命/物防 +5%、金刚印 3%/层 上限 3",
+      "ok": true,
+      "detail": "{'hp_pct': 500, 'pdef_pct': 500, 'reflect_per_stack': 300, 'reflect_max_stacks': 3}"
+    },
+    {
+      "item": "金刚印满层反伤未触碰 50% 上限",
+      "ok": true,
+      "detail": "9% vs 50%"
+    },
+    {
+      "item": "不动明王 反伤 +25%、3 回合",
+      "ok": true,
+      "detail": "{'stat': 'reflect_add', 'value': 2500, 'turns': 3}"
+    },
+    {
+      "item": "门派 断岳剑宗 有且只有 1 本心法",
+      "ok": true,
+      "detail": "1 本"
+    },
+    {
+      "item": "门派 断岳剑宗 心法 1 级开放（门派身份）",
+      "ok": true,
+      "detail": "level_req=1"
+    },
+    {
+      "item": "门派 断岳剑宗 心法被动与秘籍表一致",
+      "ok": true,
+      "detail": "{'patk_pct': 300, 'crit_dmg_pct': 1000}"
+    },
+    {
+      "item": "门派 破军枪府 有且只有 1 本心法",
+      "ok": true,
+      "detail": "1 本"
+    },
+    {
+      "item": "门派 破军枪府 心法 1 级开放（门派身份）",
+      "ok": true,
+      "detail": "level_req=1"
+    },
+    {
+      "item": "门派 破军枪府 心法被动与秘籍表一致",
+      "ok": true,
+      "detail": "{'patk_pct': 300, 'pcombo_pct': 500}"
+    },
+    {
+      "item": "门派 惊雷殿 有且只有 1 本心法",
+      "ok": true,
+      "detail": "1 本"
+    },
+    {
+      "item": "门派 惊雷殿 心法 1 级开放（门派身份）",
+      "ok": true,
+      "detail": "level_req=1"
+    },
+    {
+      "item": "门派 惊雷殿 心法被动与秘籍表一致",
+      "ok": true,
+      "detail": "{'matk_pct': 300}"
+    },
+    {
+      "item": "门派 璇玑星宫 有且只有 1 本心法",
+      "ok": true,
+      "detail": "1 本"
+    },
+    {
+      "item": "门派 璇玑星宫 心法 1 级开放（门派身份）",
+      "ok": true,
+      "detail": "level_req=1"
+    },
+    {
+      "item": "门派 璇玑星宫 心法被动与秘籍表一致",
+      "ok": true,
+      "detail": "{'matk_pct': 300}"
+    },
+    {
+      "item": "门派 缚灵符观 有且只有 1 本心法",
+      "ok": true,
+      "detail": "1 本"
+    },
+    {
+      "item": "门派 缚灵符观 心法 1 级开放（门派身份）",
+      "ok": true,
+      "detail": "level_req=1"
+    },
+    {
+      "item": "门派 缚灵符观 心法被动与秘籍表一致",
+      "ok": true,
+      "detail": "{'sealhit_pct': 800}"
+    },
+    {
+      "item": "门派 织梦谷 有且只有 1 本心法",
+      "ok": true,
+      "detail": "1 本"
+    },
+    {
+      "item": "门派 织梦谷 心法 1 级开放（门派身份）",
+      "ok": true,
+      "detail": "level_req=1"
+    },
+    {
+      "item": "门派 织梦谷 心法被动与秘籍表一致",
+      "ok": true,
+      "detail": "{'sealhit_pct': 500}"
+    },
+    {
+      "item": "门派 金刚禅院 有且只有 1 本心法",
+      "ok": true,
+      "detail": "1 本"
+    },
+    {
+      "item": "门派 金刚禅院 心法 1 级开放（门派身份）",
+      "ok": true,
+      "detail": "level_req=1"
+    },
+    {
+      "item": "门派 金刚禅院 心法被动与秘籍表一致",
+      "ok": true,
+      "detail": "{'hp_pct': 500, 'pdef_pct': 500, 'reflect_per_stack': 300, 'reflect_max_stacks': 3}"
+    },
+    {
+      "item": "门派 玄水宫 有且只有 1 本心法",
+      "ok": true,
+      "detail": "1 本"
+    },
+    {
+      "item": "门派 玄水宫 心法 1 级开放（门派身份）",
+      "ok": true,
+      "detail": "level_req=1"
+    },
+    {
+      "item": "门派 玄水宫 心法被动与秘籍表一致",
+      "ok": true,
+      "detail": "{'hp_pct': 400, 'mdef_pct': 500, 'heal_bonus_pct': 800}"
+    },
+    {
+      "item": "未出现表外门派心法",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "item": "封印成功率未突破 90% 安全线",
+      "ok": true,
+      "detail": "最高 90.0%"
+    },
+    {
+      "item": "连控递减仍能兜住（不产生无限控制链）",
+      "ok": true,
+      "detail": "相对提升最高 16.7%；连控递减 ×0.70 仍生效（第 2 次降至 49.0%）"
+    },
+    {
+      "item": "备用降档（微调 3%→2%，合计 9%）可行且更保守",
+      "ok": true,
+      "detail": "封命合计 9%"
+    }
+  ]
+}

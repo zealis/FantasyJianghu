@@ -27,7 +27,7 @@ func formulaCfg() config.BattleFormula {
 	// 与 configs/source/battle/formula.json 同口径的内存副本。
 	return config.BattleFormula{
 		Damage: config.DamageParams{K: 1.0, FloatLow: 0.95, FloatHigh: 1.05, MinDamage: 1, LevelDiffPerLevel: 0.015, LevelDiffClamp: 0.30, ArmorBreakPerStack: 0.03, ArmorBreakMaxStacks: 5},
-		Crit:   config.CritParams{BaseRate: 0.05, Damage: 1.50, DuanyueBonus: 0.10},
+		Crit:   config.CritParams{BaseRate: 0.05, Damage: 1.50},
 		Combo: struct {
 			ExtraMult float64 `json:"extra_mult"`
 		}{ExtraMult: 0.50},

@@ -1,0 +1,163 @@
+{
+  "faction": "破军枪府",
+  "source": "《秘籍配置表》V1.1 §3（破军枪府 · 物理/连击破甲）",
+  "skills": [
+    {
+      "id": "pojun_qiangpu",
+      "name": "破军枪谱",
+      "category": "心法",
+      "level_req": 1,
+      "mp_cost": 0,
+      "passive": {
+        "patk_pct": 300,
+        "pcombo_pct": 500
+      }
+    },
+    {
+      "id": "liezhen_tuci",
+      "name": "裂阵突刺",
+      "category": "单体",
+      "level_req": 10,
+      "mp_cost": 140,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 155
+        }
+      ],
+      "targets": 1,
+      "special": "ignore_pdef_10"
+    },
+    {
+      "id": "xianzhen_lianhuan",
+      "name": "陷阵连环枪",
+      "category": "单体",
+      "level_req": 20,
+      "mp_cost": 160,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 85
+        },
+        {
+          "mult": 85
+        }
+      ],
+      "targets": 1,
+      "special": "combo_extra_segment"
+    },
+    {
+      "id": "dangkou_qiangfa",
+      "name": "荡寇枪法",
+      "category": "群体",
+      "level_req": 30,
+      "mp_cost": 260,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 90
+        }
+      ],
+      "targets": 2,
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      }
+    },
+    {
+      "id": "hengsao_qianjun",
+      "name": "横扫千军",
+      "category": "群体",
+      "level_req": 50,
+      "mp_cost": 360,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 115
+        }
+      ],
+      "targets": 2,
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      },
+      "special": "armor_break_plus"
+    },
+    {
+      "id": "poji_duanhe",
+      "name": "破甲断喝",
+      "category": "控制",
+      "level_req": 25,
+      "mp_cost": 160,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 40
+        }
+      ],
+      "targets": 2,
+      "special": "pdef_down_12"
+    },
+    {
+      "id": "fuma_suohou",
+      "name": "缚马索喉",
+      "category": "控制",
+      "level_req": 45,
+      "mp_cost": 200,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 70
+        }
+      ],
+      "targets": 1,
+      "control": {
+        "type": "定身",
+        "rate": 40,
+        "duration": 1
+      },
+      "special": "speed_down_20"
+    },
+    {
+      "id": "zhanyi_feiteng",
+      "name": "战意沸腾",
+      "category": "辅助",
+      "level_req": 15,
+      "mp_cost": 130,
+      "buff_self": {
+        "stat": "pcombo_pct",
+        "value": 1500,
+        "turns": 3
+      },
+      "special": "self_patk_8"
+    },
+    {
+      "id": "xianzhen_zhizhi",
+      "name": "陷阵之志",
+      "category": "辅助",
+      "level_req": 35,
+      "mp_cost": 220,
+      "buff_self": {
+        "stat": "patk_pct",
+        "value": 1000,
+        "turns": 3
+      },
+      "buff_group": true
+    },
+    {
+      "id": "pojun_shajiang",
+      "name": "破军杀将",
+      "category": "绝学",
+      "level_req": 80,
+      "mp_cost": 800,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 260
+        }
+      ],
+      "targets": 1,
+      "special": "kill_refund_mp_30"
+    }
+  ]
+}

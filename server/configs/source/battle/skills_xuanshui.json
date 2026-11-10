@@ -1,0 +1,136 @@
+{
+  "faction": "玄水宫",
+  "source": "《秘籍配置表》V1.1 §9（玄水宫 · 肉盾/减伤治疗）",
+  "skills": [
+    {
+      "id": "xuanshui_zhenjing",
+      "name": "玄水真经",
+      "category": "心法",
+      "level_req": 1,
+      "mp_cost": 0,
+      "passive": {
+        "hp_pct": 400,
+        "mdef_pct": 500,
+        "heal_bonus_pct": 800
+      }
+    },
+    {
+      "id": "canglan_jue",
+      "name": "沧澜诀",
+      "category": "单体",
+      "level_req": 10,
+      "mp_cost": 130,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 140
+        }
+      ],
+      "targets": 1
+    },
+    {
+      "id": "nutao_zhang",
+      "name": "怒涛掌",
+      "category": "单体",
+      "level_req": 20,
+      "mp_cost": 160,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 165
+        }
+      ],
+      "targets": 1,
+      "special": "self_heal_5"
+    },
+    {
+      "id": "shuimu_tianhua",
+      "name": "水幕天华",
+      "category": "群体",
+      "level_req": 30,
+      "mp_cost": 300,
+      "special": "group_heal_75"
+    },
+    {
+      "id": "canghai_hengliu",
+      "name": "沧海横流",
+      "category": "群体",
+      "level_req": 50,
+      "mp_cost": 380,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 95
+        }
+      ],
+      "targets": 2,
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      }
+    },
+    {
+      "id": "hanchao",
+      "name": "寒潮",
+      "category": "控制",
+      "level_req": 25,
+      "mp_cost": 170,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 45
+        }
+      ],
+      "targets": 2,
+      "special": "speed_down_15"
+    },
+    {
+      "id": "xuanbing_feng",
+      "name": "玄冰封",
+      "category": "控制",
+      "level_req": 45,
+      "mp_cost": 240,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 60
+        }
+      ],
+      "targets": 1,
+      "control": {
+        "type": "冰冻",
+        "rate": 70,
+        "duration": 1
+      }
+    },
+    {
+      "id": "ruoshui_runxin",
+      "name": "若水润心",
+      "category": "辅助",
+      "level_req": 15,
+      "mp_cost": 150,
+      "special": "heal_160_cleanse"
+    },
+    {
+      "id": "guixi_gong",
+      "name": "龟息功",
+      "category": "辅助",
+      "level_req": 35,
+      "mp_cost": 160,
+      "buff_self": {
+        "stat": "mdef_pct",
+        "value": 1200,
+        "turns": 3
+      },
+      "special": "regen_4"
+    },
+    {
+      "id": "canglan_daohai",
+      "name": "沧澜倒海",
+      "category": "绝学",
+      "level_req": 80,
+      "mp_cost": 800,
+      "special": "group_heal_185_cleanse"
+    }
+  ]
+}

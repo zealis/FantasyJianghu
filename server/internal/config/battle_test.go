@@ -80,16 +80,28 @@ func TestBattleConfigLoad(t *testing.T) {
 	if b.Formula.Control.ComboDecay != 0.70 || b.Formula.Control.ImmuneTurns != 1 {
 		t.Fatalf("控制参数不一致: %+v", b.Formula.Control)
 	}
-	// 秘籍谱按门派分文件：惊雷殿 10 本 + 金刚禅院 10 本，合并后按 Faction 归属。
+	// 秘籍谱按门派分文件：八派各 10 本（含 1 级心法），合并后按 Faction 归属。
 	byFaction := map[string]int{}
+	heart := map[string]int{}
 	for _, sk := range b.Skills {
 		byFaction[sk.Faction]++
+		if sk.Category == "心法" && sk.LevelReq <= 1 {
+			heart[sk.Faction]++
+		}
 	}
-	if byFaction["惊雷殿"] != 10 || byFaction["金刚禅院"] != 10 {
-		t.Fatalf("门派秘籍数不符: %+v（期望各 10 本）", byFaction)
+	if len(byFaction) != 8 {
+		t.Fatalf("应有八派秘籍谱，实际 %d 派: %+v", len(byFaction), byFaction)
 	}
-	if len(b.Skills) != 20 {
-		t.Fatalf("合并后秘籍 = %d 本, 期望 20", len(b.Skills))
+	for f, n := range byFaction {
+		if n != 10 {
+			t.Fatalf("门派 %s 秘籍 = %d 本，期望 10 本", f, n)
+		}
+		if heart[f] != 1 {
+			t.Fatalf("门派 %s 必须有且只有 1 本 1 级心法，实际 %d", f, heart[f])
+		}
+	}
+	if len(b.Skills) != 80 {
+		t.Fatalf("合并后秘籍 = %d 本, 期望 80（八派 × 10）", len(b.Skills))
 	}
 	tianlei := b.SkillByID("tianlei_po")
 	if tianlei == nil || len(tianlei.Segments) != 1 || tianlei.Segments[0].Mult != 160 {

@@ -1,8 +1,8 @@
 {
   "config_version": "1.11.0",
-  "checked": 60,
-  "failed": 0,
-  "verdict": "PASS",
+  "checked": 73,
+  "failed": 6,
+  "verdict": "FAIL",
   "seal_calibration": "PASS",
   "perfect_tier_totals": {
     "断岳剑宗": {
@@ -382,6 +382,71 @@
       "item": "不动明王 反伤 +25%、3 回合",
       "ok": true,
       "detail": "{'stat': 'reflect_add', 'value': 2500, 'turns': 3}"
+    },
+    {
+      "item": "门派 断岳剑宗 有且只有 1 本心法",
+      "ok": false,
+      "detail": "0 本"
+    },
+    {
+      "item": "门派 破军枪府 有且只有 1 本心法",
+      "ok": false,
+      "detail": "0 本"
+    },
+    {
+      "item": "门派 惊雷殿 有且只有 1 本心法",
+      "ok": true,
+      "detail": "1 本"
+    },
+    {
+      "item": "门派 惊雷殿 心法 1 级开放（门派身份）",
+      "ok": true,
+      "detail": "level_req=1"
+    },
+    {
+      "item": "门派 惊雷殿 心法被动与秘籍表一致",
+      "ok": true,
+      "detail": "{'matk_pct': 300}"
+    },
+    {
+      "item": "门派 璇玑星宫 有且只有 1 本心法",
+      "ok": false,
+      "detail": "0 本"
+    },
+    {
+      "item": "门派 缚灵符观 有且只有 1 本心法",
+      "ok": false,
+      "detail": "0 本"
+    },
+    {
+      "item": "门派 织梦谷 有且只有 1 本心法",
+      "ok": false,
+      "detail": "0 本"
+    },
+    {
+      "item": "门派 金刚禅院 有且只有 1 本心法",
+      "ok": true,
+      "detail": "1 本"
+    },
+    {
+      "item": "门派 金刚禅院 心法 1 级开放（门派身份）",
+      "ok": true,
+      "detail": "level_req=1"
+    },
+    {
+      "item": "门派 金刚禅院 心法被动与秘籍表一致",
+      "ok": true,
+      "detail": "{'hp_pct': 500, 'pdef_pct': 500, 'reflect_per_stack': 300, 'reflect_max_stacks': 3}"
+    },
+    {
+      "item": "门派 玄水宫 有且只有 1 本心法",
+      "ok": false,
+      "detail": "0 本"
+    },
+    {
+      "item": "未出现表外门派心法",
+      "ok": true,
+      "detail": "[]"
     },
     {
       "item": "封印成功率未突破 90% 安全线",

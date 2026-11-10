@@ -1,0 +1,164 @@
+{
+  "faction": "断岳剑宗",
+  "source": "《秘籍配置表》V1.1 §2（断岳剑宗 · 物理/暴击剑意）",
+  "skills": [
+    {
+      "id": "duanyue_jianjing",
+      "name": "断岳剑经",
+      "category": "心法",
+      "level_req": 1,
+      "mp_cost": 0,
+      "passive": {
+        "patk_pct": 300,
+        "crit_dmg_pct": 1000
+      }
+    },
+    {
+      "id": "liekong_jiujian",
+      "name": "裂空九剑",
+      "category": "单体",
+      "level_req": 10,
+      "mp_cost": 140,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 55
+        },
+        {
+          "mult": 55
+        },
+        {
+          "mult": 55
+        }
+      ],
+      "targets": 1
+    },
+    {
+      "id": "canyue_zhan",
+      "name": "残月斩",
+      "category": "单体",
+      "level_req": 20,
+      "mp_cost": 120,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 130
+        }
+      ],
+      "targets": 1,
+      "special": "low_hp_execute_200"
+    },
+    {
+      "id": "jianqi_zongheng",
+      "name": "剑气纵横",
+      "category": "群体",
+      "level_req": 30,
+      "mp_cost": 260,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 85
+        }
+      ],
+      "targets": 2,
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      }
+    },
+    {
+      "id": "qianfeng_pokong",
+      "name": "千锋破空",
+      "category": "群体",
+      "level_req": 50,
+      "mp_cost": 340,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 105
+        }
+      ],
+      "targets": 2,
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      },
+      "special": "sword_intent_dmg_3"
+    },
+    {
+      "id": "duanyue_chenfeng",
+      "name": "断岳沉锋",
+      "category": "控制",
+      "level_req": 25,
+      "mp_cost": 150,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 60
+        }
+      ],
+      "targets": 1,
+      "special": "patk_down_15"
+    },
+    {
+      "id": "suomai_jian",
+      "name": "锁脉剑",
+      "category": "控制",
+      "level_req": 45,
+      "mp_cost": 200,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 70
+        }
+      ],
+      "targets": 1,
+      "control": {
+        "type": "封技能",
+        "rate": 55,
+        "duration": 1
+      }
+    },
+    {
+      "id": "jianxin_tongming",
+      "name": "剑心通明",
+      "category": "辅助",
+      "level_req": 15,
+      "mp_cost": 130,
+      "buff_self": {
+        "stat": "pcrit_pct",
+        "value": 1200,
+        "turns": 3
+      },
+      "special": "sword_intent_2"
+    },
+    {
+      "id": "yujian_chengfeng",
+      "name": "御剑乘风",
+      "category": "辅助",
+      "level_req": 35,
+      "mp_cost": 220,
+      "buff_self": {
+        "stat": "speed_pct",
+        "value": 1200,
+        "turns": 3
+      },
+      "buff_group": true
+    },
+    {
+      "id": "yijian_kaitian",
+      "name": "一剑开天",
+      "category": "绝学",
+      "level_req": 80,
+      "mp_cost": 800,
+      "attack_type": "physical",
+      "segments": [
+        {
+          "mult": 240
+        }
+      ],
+      "targets": 1,
+      "special": "sword_intent_consume_30"
+    }
+  ]
+}

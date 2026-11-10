@@ -191,6 +191,11 @@ func (s *Service) buildList(ctx context.Context, charID int64) (map[string]any, 
 				"hp": st.HP, "mp": st.MP, "patk": st.PAtk, "matk": st.MAtk,
 				"pdef": st.PDef, "mdef": st.MDef, "speed": st.Speed,
 				"pdodge": st.PDodge, "pcrit": st.PCrit, "phit": st.PHit,
+				// 心法被动（门派身份）与角色级系数，供面板/探针核对；万分制。
+				"mcrit": st.MCrit, "pcombo": st.PCombo, "sealhit": st.SealHit,
+				"crit_dmg": st.CritDmg, "heal_bonus": st.HealBonus,
+				"reflect_per_stack":  st.ReflectPerStack,
+				"reflect_max_stacks": st.ReflectMaxStacks,
 			}
 			if fin.Suit.Tier > 0 {
 				mainAttrs := fin.Suit.MainAttrs

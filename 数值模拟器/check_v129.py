@@ -241,6 +241,46 @@ FACTION_CATEGORY = {
 }
 
 
+# ---- 心法 = 门派身份（秘籍配置表 V1.1 §2–§9）：八派各 1 本 1 级心法，裸装即生效 ----
+DOC_HEARTS = {
+    "断岳剑宗": {"patk_pct": 300, "crit_dmg_pct": 1000},
+    "破军枪府": {"patk_pct": 300, "pcombo_pct": 500},
+    "惊雷殿": {"matk_pct": 300},
+    "璇玑星宫": {"matk_pct": 300},
+    "缚灵符观": {"sealhit_pct": 800},
+    "织梦谷": {"sealhit_pct": 500},
+    "金刚禅院": {"hp_pct": 500, "pdef_pct": 500, "reflect_per_stack": 300, "reflect_max_stacks": 3},
+    "玄水宫": {"hp_pct": 400, "mdef_pct": 500, "heal_bonus_pct": 800},
+}
+
+
+def check_hearts():
+    import glob
+    found = {}
+    for path in glob.glob(os.path.join(BUILD, "battle", "skills_*.json")):
+        with open(path, encoding="utf-8") as fh:
+            book = json.load(fh)
+        faction = book.get("faction", "")
+        for sk in book.get("skills", []):
+            if sk.get("category") == "心法":
+                found.setdefault(faction, []).append(sk)
+    for faction, want in DOC_HEARTS.items():
+        hearts = found.get(faction, [])
+        check("门派 %s 有且只有 1 本心法" % faction, len(hearts) == 1,
+              "%d 本" % len(hearts))
+        if len(hearts) != 1:
+            continue
+        heart = hearts[0]
+        check("门派 %s 心法 1 级开放（门派身份）" % faction, heart.get("level_req") == 1,
+              "level_req=%s" % heart.get("level_req"))
+        passive = heart.get("passive", {})
+        got = {k: passive.get(k, 0) for k in want}
+        check("门派 %s 心法被动与秘籍表一致" % faction, got == want,
+              "%s" % got)
+    extra = [f for f in found if f not in DOC_HEARTS]
+    check("未出现表外门派心法", not extra, str(extra))
+
+
 def main():
     if not os.path.isdir(BUILD):
         print("找不到配置包目录: %s" % BUILD)
@@ -252,6 +292,7 @@ def main():
     combines = check_suit(suit)
     check_sect_war(sw)
     check_coeffs(formula, suit)
+    check_hearts()
     seal_rows, seal_verdict = check_seal_calibration(suit, formula)
 
     failed = [r for r in results if not r["ok"]]

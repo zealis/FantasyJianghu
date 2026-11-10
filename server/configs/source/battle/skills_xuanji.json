@@ -1,0 +1,145 @@
+{
+  "faction": "璇玑星宫",
+  "source": "《秘籍配置表》V1.1 §5（璇玑星宫 · 法术/星辉蓄力）",
+  "skills": [
+    {
+      "id": "xuanji_xingjing",
+      "name": "璇玑星经",
+      "category": "心法",
+      "level_req": 1,
+      "mp_cost": 0,
+      "passive": {
+        "matk_pct": 300
+      }
+    },
+    {
+      "id": "yinxing_jue",
+      "name": "引星诀",
+      "category": "单体",
+      "level_req": 10,
+      "mp_cost": 140,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 150
+        }
+      ],
+      "targets": 1
+    },
+    {
+      "id": "luoxing_zhi",
+      "name": "落星指",
+      "category": "单体",
+      "level_req": 20,
+      "mp_cost": 180,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 185
+        }
+      ],
+      "targets": 1,
+      "special": "star3_guaranteed_crit"
+    },
+    {
+      "id": "xingyun",
+      "name": "星陨",
+      "category": "群体",
+      "level_req": 30,
+      "mp_cost": 300,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 90
+        }
+      ],
+      "targets": 2,
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      }
+    },
+    {
+      "id": "yunxing_tianzhui",
+      "name": "陨星天坠",
+      "category": "群体",
+      "level_req": 50,
+      "mp_cost": 430,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 125
+        }
+      ],
+      "targets": 2,
+      "targets_growth": {
+        "level": 40,
+        "targets": 3
+      }
+    },
+    {
+      "id": "dingxing_zhou",
+      "name": "定星咒",
+      "category": "控制",
+      "level_req": 25,
+      "mp_cost": 180,
+      "attack_type": "magic",
+      "segments": [
+        {
+          "mult": 50
+        }
+      ],
+      "targets": 1,
+      "control": {
+        "type": "定身",
+        "rate": 75,
+        "duration": 1
+      }
+    },
+    {
+      "id": "luanxing_mitu",
+      "name": "乱星迷途",
+      "category": "控制",
+      "level_req": 45,
+      "mp_cost": 260,
+      "targets": 2,
+      "control": {
+        "type": "定身",
+        "rate": 55,
+        "duration": 1
+      },
+      "special": "speed_down_20"
+    },
+    {
+      "id": "xingpan_tuiyan",
+      "name": "星盘推演",
+      "category": "辅助",
+      "level_req": 15,
+      "mp_cost": 140,
+      "special": "ally_hit_crit_buff"
+    },
+    {
+      "id": "pixing_daiyue",
+      "name": "披星戴月",
+      "category": "辅助",
+      "level_req": 35,
+      "mp_cost": 230,
+      "buff_self": {
+        "stat": "matk_pct",
+        "value": 1000,
+        "turns": 3
+      },
+      "buff_group": true
+    },
+    {
+      "id": "zhoutian_xingyun",
+      "name": "周天星陨",
+      "category": "绝学",
+      "level_req": 80,
+      "mp_cost": 950,
+      "attack_type": "magic",
+      "targets": 3,
+      "special": "star_bonus_25"
+    }
+  ]
+}
