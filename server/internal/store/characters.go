@@ -18,6 +18,9 @@ type Character struct {
 	Gender    string // 男|女（M1.5 创角两步流）
 	Level     int
 	Exp       int
+	Breakthrough int // 已跨越的最高突破关口（0=未突破，M2c 切片三）
+	UnspentPoints int // 未分配属性点（每级 +4，M2c 切片三）
+	Str, Spi, Agi, Con int // 一级属性已分配点（M2c 切片四）
 	MapID     string
 	PosX      float64
 	PosY      float64
@@ -25,6 +28,11 @@ type Character struct {
 }
 
 type CharactersRepo struct{ db *sql.DB }
+
+// PointsMap 返回一级属性已分配点（供 battle 派生叠加，M2c 切片四）。
+func (c Character) PointsMap() map[string]int {
+	return map[string]int{"str": c.Str, "spi": c.Spi, "agi": c.Agi, "con": c.Con}
+}
 
 // CreateCharacter 在单事务内完成"计数→插入"，保证一账号 ≤3 角色
 // 并发下也不超建（§6.4 原子结算口径）。
@@ -57,9 +65,9 @@ func (r *CharactersRepo) GetCharacter(ctx context.Context, id int64) (Character,
 	var c Character
 	var createdAt int64
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, account_id, name, faction, gender, level, exp, map_id, pos_x, pos_y, created_at
+		`SELECT id, account_id, name, faction, gender, level, exp, breakthrough, unspent_points, str, spi, agi, con, map_id, pos_x, pos_y, created_at
 		 FROM characters WHERE id = ? AND deleted_at = 0`, id).
-		Scan(&c.ID, &c.AccountID, &c.Name, &c.Faction, &c.Gender, &c.Level, &c.Exp, &c.MapID, &c.PosX, &c.PosY, &createdAt)
+		Scan(&c.ID, &c.AccountID, &c.Name, &c.Faction, &c.Gender, &c.Level, &c.Exp, &c.Breakthrough, &c.UnspentPoints, &c.Str, &c.Spi, &c.Agi, &c.Con, &c.MapID, &c.PosX, &c.PosY, &createdAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Character{}, ErrNotFound
 	}

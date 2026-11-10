@@ -80,6 +80,11 @@ func Pack(source, out, version string) error {
 		return err
 	}
 	data.Items = items
+	levels, err := loadLevelDir(source)
+	if err != nil {
+		return err
+	}
+	data.Levels = levels
 
 	// 结构与引用完整性校验：不通过不生成配置包（§7.2）。
 	if err := Validate(data); err != nil {
@@ -106,6 +111,9 @@ func Pack(source, out, version string) error {
 		return err
 	}
 	if err := packConfigFile(&mf, target, source, "item/items.json"); err != nil {
+		return err
+	}
+	if err := packConfigFile(&mf, target, source, "level/levels.json"); err != nil {
 		return err
 	}
 	for name, raw := range sceneRaws {

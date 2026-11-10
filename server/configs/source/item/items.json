@@ -6,35 +6,126 @@
       "name": "小还丹",
       "category": "丹药",
       "stack": 99,
-      "desc": "回复少量气血的入门丹药，清河村药铺常备。"
+      "quality": "凡品",
+      "desc": "回复少量气血的入门丹药，清河村药铺常备。",
+      "sell": 5
+    },
+    {
+      "id": "exp_dan",
+      "name": "经验丹",
+      "category": "丹药",
+      "stack": 99,
+      "quality": "良品",
+      "use": {
+        "kind": "exp",
+        "value": 100
+      },
+      "desc": "炼化后增长修为见识的丹药，使用得经验 100。",
+      "sell": 20
     },
     {
       "id": "stone_qianghua",
       "name": "强化石",
       "category": "材料",
       "stack": 999,
-      "desc": "装备强化的通用材料，日常任务与副本产出。"
+      "quality": "良品",
+      "desc": "装备强化的通用材料，日常任务与副本产出。",
+      "sell": 8
     },
     {
       "id": "stone_xingyun",
       "name": "初级幸运石",
       "category": "材料",
       "stack": 999,
-      "desc": "锻造幸运钥匙的初级材料，日常宝箱产出。"
+      "quality": "精品",
+      "desc": "锻造幸运钥匙的初级材料，日常宝箱产出。",
+      "sell": 25
     },
     {
       "id": "token_zhenbao",
       "name": "珍宝令",
       "category": "凭证",
       "stack": 999,
-      "desc": "珍宝抽奖凭证，成长礼包与主线产出（不可交易）。"
+      "quality": "极品",
+      "desc": "珍宝抽奖凭证，成长礼包与主线产出（不可交易）。",
+      "sell": 100
     },
     {
       "id": "map_fragment_a",
       "name": "地图残卷·上",
       "category": "凭证",
       "stack": 99,
-      "desc": "藏宝图合成材料之一，集齐上下两篇可交铁匠合成。"
+      "quality": "精品",
+      "desc": "藏宝图合成材料之一，集齐上下两篇可交铁匠合成。",
+      "sell": 30
+    },
+    {
+      "id": "sword_wood",
+      "name": "粗木剑",
+      "category": "装备",
+      "stack": 1,
+      "quality": "良品",
+      "slot": "weapon",
+      "stats": {
+        "patk": 18
+      },
+      "desc": "入门木剑，剑身粗砺却趁手，村中教头常用以喂招。",
+      "sell": 30
+    },
+    {
+      "id": "robe_yunjin",
+      "name": "云锦袍",
+      "category": "装备",
+      "stack": 1,
+      "quality": "良品",
+      "slot": "clothes",
+      "stats": {
+        "pdef": 12,
+        "hp": 60
+      },
+      "desc": "云纹织锦的长袍，护身亦体面。",
+      "sell": 35
+    },
+    {
+      "id": "hat_wujin",
+      "name": "乌金盔",
+      "category": "装备",
+      "stack": 1,
+      "quality": "良品",
+      "slot": "hat",
+      "stats": {
+        "hp": 40,
+        "mdef": 6
+      },
+      "desc": "乌金薄盔，挡得住劈砍也挡得住流矢。",
+      "sell": 30
+    },
+    {
+      "id": "pei_liuyun",
+      "name": "流云佩",
+      "category": "装备",
+      "stack": 1,
+      "quality": "精品",
+      "slot": "necklace",
+      "stats": {
+        "mp": 30,
+        "matk": 10
+      },
+      "desc": "流云纹玉佩，温养真气。",
+      "sell": 80
+    },
+    {
+      "id": "boots_lanyue",
+      "name": "揽月靴",
+      "category": "装备",
+      "stack": 1,
+      "quality": "良品",
+      "slot": "boots",
+      "stats": {
+        "speed": 12
+      },
+      "desc": "轻底快靴，追月逐风。",
+      "sell": 30
     }
   ]
 }

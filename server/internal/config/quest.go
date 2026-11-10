@@ -6,13 +6,24 @@ import (
 	"path/filepath"
 )
 
+// ItemUseDef 为可使用物品的效果（M2c 切片一：exp/修为/金币；回复类待气血状态接入）。
+type ItemUseDef struct {
+	Kind  string `json:"kind"` // exp|xiuwei|gold
+	Value int64  `json:"value"`
+}
+
 // ItemDef 为物品字典最小集（M2b：任务奖励的引用目标；完整道具属性与装备 M2c）。
 type ItemDef struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Category string `json:"category"`
-	Stack    int    `json:"stack"` // 单格堆叠上限（背包容量预检按格计算）
-	Desc     string `json:"desc"`
+	ID       string         `json:"id"`
+	Name     string         `json:"name"`
+	Category string         `json:"category"`
+	Stack    int            `json:"stack"` // 单格堆叠上限（背包容量预检按格计算）
+	Desc     string         `json:"desc"`
+	Quality  string         `json:"quality"` // 凡品|良品|精品|极品|完美（缺省凡品，UI §2.2 品质色）
+	Use      *ItemUseDef    `json:"use"`     //  nil = 不可使用
+	Slot     string         `json:"slot"`    // 装备槽：weapon|clothes|hat|necklace|boots（空=非装备）
+	Stats    map[string]int `json:"stats"`   // 装备加成：hp/mp/patk/matk/pdef/mdef/speed（非负）
+	Sell     int            `json:"sell"`    // 出售单价（金币）；0 = 不可出售
 }
 
 // ItemData 为物品域配置（item/items.json）。
@@ -37,6 +48,14 @@ func (d ItemData) ItemStack(id string) int {
 		return it.Stack
 	}
 	return 1
+}
+
+// ItemQuality 取品质档；缺省凡品（客户端按 UI 规范 §2.2 品质色渲染）。
+func (d ItemData) ItemQuality(id string) string {
+	if it := d.ByID(id); it != nil && it.Quality != "" {
+		return it.Quality
+	}
+	return "凡品"
 }
 
 // QuestGiver 为任务发布 NPC（场景 + NPC id）。
@@ -125,6 +144,10 @@ func validateQuests(d Data) error {
 		return fmt.Errorf("bag_capacity 必须为正")
 	}
 	itemIDs := map[string]bool{}
+	validQualities := map[string]bool{"凡品": true, "良品": true, "精品": true, "极品": true, "完美": true}
+	validUseKinds := map[string]bool{"exp": true, "xiuwei": true, "gold": true}
+	validEquipSlots := map[string]bool{"weapon": true, "clothes": true, "hat": true, "necklace": true, "boots": true}
+	validEquipStats := map[string]bool{"hp": true, "mp": true, "patk": true, "matk": true, "pdef": true, "mdef": true, "speed": true}
 	for _, it := range d.Items.Items {
 		if it.ID == "" || itemIDs[it.ID] {
 			return fmt.Errorf("物品 id 空/重复: %q", it.ID)
@@ -134,6 +157,34 @@ func validateQuests(d Data) error {
 		}
 		if it.Stack <= 0 {
 			return fmt.Errorf("物品 %s 堆叠上限必须为正", it.ID)
+		}
+		if it.Quality != "" && !validQualities[it.Quality] {
+			return fmt.Errorf("物品 %s 品质非法: %q", it.ID, it.Quality)
+		}
+		if it.Sell < 0 {
+			return fmt.Errorf("物品 %s 出售价不能为负", it.ID)
+		}
+		if it.Use != nil {
+			if !validUseKinds[it.Use.Kind] {
+				return fmt.Errorf("物品 %s 使用效果类型非法: %q", it.ID, it.Use.Kind)
+			}
+			if it.Use.Value <= 0 {
+				return fmt.Errorf("物品 %s 使用效果数值必须为正", it.ID)
+			}
+		}
+		if it.Slot != "" && !validEquipSlots[it.Slot] {
+			return fmt.Errorf("物品 %s 装备槽非法: %q", it.ID, it.Slot)
+		}
+		if it.Category == "装备" && it.Slot == "" {
+			return fmt.Errorf("装备 %s 缺装备槽", it.ID)
+		}
+		for k, v := range it.Stats {
+			if !validEquipStats[k] {
+				return fmt.Errorf("物品 %s 装备属性键非法: %q", it.ID, k)
+			}
+			if v < 0 {
+				return fmt.Errorf("物品 %s 装备属性不得为负: %s", it.ID, k)
+			}
 		}
 		itemIDs[it.ID] = true
 	}

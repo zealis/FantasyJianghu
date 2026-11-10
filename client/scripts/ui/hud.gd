@@ -9,6 +9,8 @@ const COLOR_PAPER := Color("f6efdf")
 
 var _theme: Theme = preload("res://resources/theme_paper.tres")
 const AvatarFrames := preload("res://scripts/ui/avatar_frames.gd")
+const PointPanelScript := preload("res://scripts/ui/point_panel.gd")
+var _points_panel: Control
 
 func _ready() -> void:
 	theme = _theme
@@ -64,6 +66,11 @@ func _build_character_card() -> void:
 	avatar.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	avatar.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	avatar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# 用户定案：加点入口就是左上头像（不再放设置里）。
+	avatar.mouse_filter = Control.MOUSE_FILTER_STOP
+	avatar.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	avatar.tooltip_text = "点击查看 / 分配属性点"
+	avatar.gui_input.connect(_on_avatar_input)
 	avatar_wrap.add_child(avatar)
 
 	# 定稿头像带细画框；素材自带的框随 11% 裁剪一起去掉后，这里补一圈同色描边。
@@ -144,6 +151,22 @@ func _build_character_card() -> void:
 		pb.add_theme_stylebox_override("background", track)
 		pb.add_theme_stylebox_override("fill", fill)
 		vbox.add_child(pb)
+
+func _on_avatar_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_open_points()
+
+## 加点面板挂在 UILayer（HUD 的父级），盖在世界与 HUD 之上。
+func _open_points() -> void:
+	if _points_panel != null and is_instance_valid(_points_panel):
+		_points_panel.queue_free()
+	var p := Control.new()
+	p.set_script(PointPanelScript)
+	var host: Node = get_parent()
+	if host == null:
+		host = self
+	host.add_child(p)
+	_points_panel = p
 
 func _avatar_texture() -> Texture2D:
 	var path := "res://assets/avatars/%s_%s.png" % [SessionStore.faction, SessionStore.gender]
@@ -260,11 +283,31 @@ func _icon_button(icon_name: String) -> Button:
 		b.icon = load(path)
 		b.expand_icon = true
 	b.tooltip_text = icon_name
-	b.pressed.connect(func() -> void: _toast("%s 功能即将开放" % icon_name))
+	b.pressed.connect(func() -> void:
+		if icon_name == "背包" or icon_name == "任务":
+			_open_quest_ui(icon_name)
+		elif icon_name == "设置":
+			var sp := get_node_or_null("../SettingsPanel")
+			if sp:
+				sp.call("open")
+			else:
+				_toast("设置功能即将开放")
+		else:
+			_toast("%s 功能即将开放" % icon_name))
 	return b
 
-## 轻提示（自动消失）。
+## 背包/任务图标直达定稿面板（QuestUI 与 HUD 同挂 UILayer）。
+func _open_quest_ui(icon_name: String) -> void:
+	var ui := get_node_or_null("../QuestUI")
+	if ui == null:
+		_toast("%s 功能即将开放" % icon_name)
+		return
+	ui.call("open_bag" if icon_name == "背包" else "open_quest")
+
+## 轻提示（自动消失）。消息提醒关闭时不落 toast（设置·系统）。
 func _toast(msg: String) -> void:
+	if not Settings.notify:
+		return
 	var existing := find_child("Toast", true, false)
 	if existing:
 		existing.queue_free()

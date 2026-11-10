@@ -146,6 +146,14 @@ func _switch_tab(login_active: bool) -> void:
 	_tab_register.add_theme_color_override("font_color", COLOR_INK if login_active else COLOR_ACCENT)
 	_status.text = ""
 
+## 设置底栏回登录页：清密码；切换账号保留账号名，退出登录连账号一起清。
+func reset_for_logout(clear_account: bool) -> void:
+	_switch_tab(true)
+	_password_edit.text = ""
+	if clear_account:
+		_account_edit.text = ""
+	_set_status("")
+
 func _field(placeholder: String, secret := false) -> LineEdit:
 	var e := LineEdit.new()
 	e.placeholder_text = placeholder

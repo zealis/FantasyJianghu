@@ -1,0 +1,13 @@
+{
+  "max_level": 89,
+  "exp_base": 100,
+  "exp_exponent": 1.5,
+  "gates": [29, 39, 49, 59, 69, 79],
+  "points_per_level": 4,
+  "point_gains": {
+    "str": {"patk": 2},
+    "spi": {"matk": 2, "mp": 5},
+    "agi": {"speed": 1, "dodge": 10},
+    "con": {"hp": 10, "pdef": 1}
+  }
+}

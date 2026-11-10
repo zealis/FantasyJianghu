@@ -384,6 +384,7 @@ func enter_battle(snapshot: Dictionary) -> void:
 	for u in units:
 		var sd := int((u as Dictionary).get("side", 0))
 		_side_counts[sd] = int(_side_counts.get(sd, 0)) + 1
+	_speed_index = clampi(Settings.speed_index, 0, SPEEDS.size() - 1)
 	_apply_speed()
 	for u in units:
 		var info: Dictionary = u
@@ -403,6 +404,7 @@ func enter_battle(snapshot: Dictionary) -> void:
 			enemy_count += 1
 	_cmd_panel.set_requires_target(enemy_count > 1)
 	_reset_cmd()
+	_cmd_panel.set_auto(Settings.auto_battle)
 	# 默认锁定首个敌方目标，玩家可直接点普攻。
 	for id in _units:
 		if int(_unit_sides.get(id, 0)) == 1:
@@ -854,7 +856,7 @@ func _set_dead(unit_id: int) -> void:
 	_set_state(unit_id, "倒下")
 
 func _dash_attack(actor_node: Node2D, target_node: Node2D) -> void:
-	if actor_node == null or target_node == null:
+	if actor_node == null or target_node == null or not Settings.vfx:
 		return
 	var orig := actor_node.position
 	# 从右往左冲时停在目标左侧，反之停在右侧；换边后不再固定 +60。
@@ -891,7 +893,7 @@ func _tagged_number(value: int, flags: Dictionary, forced: Array = []) -> String
 ## 飘字：V1.28 加深 + 深褐描边/投影，停留时间由 0.8s 延长到约 1.8~2.0s。
 ## emphasis 用于暴击等（规范 §5「暴击加大加粗」），above 用于技能名浮在名牌之上。
 func _float_text(node: Node2D, text: String, color: Color, above: bool = false, emphasis: bool = false) -> void:
-	if node == null:
+	if node == null or not Settings.float_text:
 		return
 	var h: float = _unit_heights.get(int(str(node.name)), 150.0)
 	var lab := Label.new()

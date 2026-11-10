@@ -84,6 +84,10 @@ func _play_anim(anim: String) -> void:
 	_anim_name = anim
 	_sprite.play(anim)
 
+## 任务「前往」：自动走到指定 x（复用点按沿路径段移动，手动按键即取消）。
+func walk_to(x: float) -> void:
+	_target_x = clampf(x, WorldStore.walk_bounds.x, WorldStore.walk_bounds.y)
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_target_x = get_global_mouse_position().x
@@ -133,6 +137,10 @@ func _on_packet(main_code: int, sub_code: int, payload: Dictionary) -> void:
 	if main_code != 3 or sub_code != 2:
 		return
 	var server_x := float(payload.get("x", position.x))
+	# 回包等于自己上一次上报 = 确认而非纠偏。低帧率下物理按批步进，回包到达时
+	# 预测位置已领先上报点 16px 以上（30fps 约 3~4 tick），误判会 snap 回并取消点按/自动走目标。
+	if not is_nan(_last_reported_x) and absf(server_x - _last_reported_x) < 1.0:
+		return
 	if absf(server_x - position.x) > CORRECT_TOLERANCE:
 		position.x = server_x
 		_target_x = NAN

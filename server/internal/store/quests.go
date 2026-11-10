@@ -200,6 +200,7 @@ type SubmitRequest struct {
 	Items             []GrantItem
 	StackOf           func(itemID string) int // 单格上限（配置来源）
 	BagCapacity       int
+	Curve             LevelCurve // 等级结算（M2c 切片三；零值=只累加不升级）
 }
 
 // SubmitResult 为交付结果（客户端展示奖励与到账后余额）。
@@ -258,10 +259,9 @@ func (r *QuestRepo) Submit(ctx context.Context, req SubmitRequest) (SubmitResult
 			nowUnix(), req.QuestRowID); err != nil {
 			return err
 		}
-		// 经验累加（等级曲线/突破关口 M2c 单独接入，本轮只累加）。
+		// 经验累加 + 按表升级（M2c 切片三；关口/溢出由结算处理）。
 		if req.Exp > 0 {
-			if _, err := tx.ExecContext(ctx,
-				`UPDATE characters SET exp = exp + ? WHERE id = ?`, req.Exp, req.CharacterID); err != nil {
+			if err := AddExpTx(ctx, tx, req.CharacterID, int(req.Exp), req.Curve); err != nil {
 				return err
 			}
 		}

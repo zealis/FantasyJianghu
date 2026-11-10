@@ -39,7 +39,10 @@ const (
 	SubPing = 0
 	// 主码 2 账号/角色
 	SubAuth = 1
+	SubCharAllocate = 5
+	SubCharBreakthrough = 4
 	SubCharCreate = 2
+	SubCharResetPoints = 6
 	SubCharSelect = 3
 	// 主码 3 世界/地图/移动
 	SubEnterScene = 1
@@ -60,6 +63,14 @@ const (
 	SubBattleResult = 5
 	// 主码 5 背包/物品
 	SubBagList = 1
+	SubBagLock = 5
+	SubBagSell = 4
+	SubBagSort = 3
+	SubBagUse = 2
+	// 主码 6 装备/强化
+	SubEquipRemove = 2
+	SubEquipView = 3
+	SubEquipWear = 1
 	// 主码 10 NPC/商店
 	SubNpcTalk = 1
 	// 主码 11 任务

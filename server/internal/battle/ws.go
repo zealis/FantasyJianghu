@@ -62,7 +62,7 @@ func (s *Service) playerUnit(ctx context.Context, charID int64) (*Unit, error) {
 	if err != nil {
 		return nil, err
 	}
-	st, err := DerivedStats(c.Level, c.Faction, s.cfg.Battle)
+	st, err := DerivedStatsWithPoints(c.Level, c.Faction, s.cfg.Battle, s.cfg.Levels.PointGains, c.PointsMap())
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +150,7 @@ func (s *Service) HandleEnter(ctx context.Context, sess *session.Session, payloa
 		d := s.cfg.Battle.Formula.Drill
 		// 演练场基准等级：重建玩家战斗副本（不改角色表），并按基准等级开放秘籍，
 		// 避免 Lv1 玩家被高等级怪物模板秒杀、也能完整演示感电/反伤/顺序条。
+		// 演练场按基准等级重建（确定性演示），不含角色加点。
 		if st, err := DerivedStats(d.Level, player.Faction, s.cfg.Battle); err == nil {
 			player.Level, player.BaseStats, player.Stats = d.Level, st, st
 			player.HP, player.MP = st.HP, st.MP

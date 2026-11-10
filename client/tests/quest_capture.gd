@@ -33,7 +33,7 @@ func _ready() -> void:
 		},
 		{
 			"id": "main_002", "name": "拜见教头", "type": "main", "chapter": 1,
-			"state": "available", "desc": "何伯让你去寻教头·铁山，他或许知道村中惨祸的来路。",
+			"state": "active", "desc": "何伯让你去寻教头·铁山，他或许知道村中惨祸的来路。",
 			"giver": {"map_id": "清河村", "npc_id": "tieshan"},
 			"objectives": [{"kind": "talk", "target": "tieshan", "cur": 0, "need": 1}],
 			"rewards": {"exp": 180, "xiuwei": 30, "gold": 600,
@@ -41,10 +41,9 @@ func _ready() -> void:
 		},
 		{
 			"id": "main_003", "name": "试手木桩", "type": "main", "chapter": 1,
-			"state": "locked", "desc": "教头要先看你手上功夫。与他切磋木桩人，胜一场再谈别的。",
-			"reason": "前置任务未完成",
+			"state": "done", "desc": "教头要先看你手上功夫。与他切磋木桩人，胜一场再谈别的。",
 			"giver": {"map_id": "清河村", "npc_id": "tieshan"},
-			"objectives": [{"kind": "kill", "target": "muzhuang", "cur": 0, "need": 1}],
+			"objectives": [{"kind": "kill", "target": "muzhuang", "cur": 1, "need": 1}],
 			"rewards": {"exp": 300, "xiuwei": 50, "gold": 1200,
 				"items": [{"id": "token_zhenbao", "name": "珍宝令", "count": 1}]},
 		},
@@ -65,14 +64,24 @@ func _ready() -> void:
 		},
 	]
 	QuestStore.bag = {
-		"capacity": 60, "used": 3,
+		"capacity": 60, "used": 4,
 		"items": [
-			{"id": "pill_xiaohuan", "name": "小还丹", "category": "丹药", "count": 2, "stack": 99},
-			{"id": "stone_qianghua", "name": "强化石", "category": "材料", "count": 8, "stack": 999},
-			{"id": "token_zhenbao", "name": "珍宝令", "category": "凭证", "count": 1, "stack": 999},
+			{"id": "pill_xiaohuan", "name": "小还丹", "category": "丹药", "count": 2, "stack": 99,
+				"quality": "凡品", "desc": "回复少量气血的入门丹药，清河村药铺常备。", "use": null, "sell": 5, "locked": false},
+			{"id": "exp_dan", "name": "经验丹", "category": "丹药", "count": 1, "stack": 99,
+				"quality": "良品", "desc": "炼化后增长修为见识的丹药，使用得经验 100。",
+				"use": {"kind": "exp", "value": 100}, "sell": 20, "locked": false},
+			{"id": "stone_qianghua", "name": "强化石", "category": "材料", "count": 8, "stack": 999,
+				"quality": "良品", "desc": "装备强化的通用材料，日常任务与副本产出。", "use": null, "sell": 8, "locked": false},
+			{"id": "token_zhenbao", "name": "珍宝令", "category": "凭证", "count": 1, "stack": 999,
+				"quality": "极品", "desc": "珍宝抽奖凭证，成长礼包与主线产出（不可交易）。", "use": null, "sell": 100, "locked": true},
 		],
 	}
 
+	EquipStore.slots = {"weapon": {"id": "sword_wood", "name": "粗木剑", "quality": "良品",
+		"stats": {"patk": 18}, "slot": "weapon"}}
+	EquipStore.attrs = {"hp": 226, "mp": 100, "patk": 89, "matk": 71, "pdef": 50, "mdef": 60,
+		"speed": 100, "hit": 10000, "dodge": 0, "crit": 500, "combo": 0, "resist": 1000}
 	var ui_layer := CanvasLayer.new()
 	ui_layer.layer = 5
 	add_child(ui_layer)
@@ -88,9 +97,10 @@ func _ready() -> void:
 	if not await _capture(OUT_PANEL):
 		return
 
-	# 2) 背包面板。
+	# 2) 背包面板（选中首件物品展示详情卡）。
 	ui._panel.visible = false
 	ui._bag_panel.visible = true
+	ui._selected_item = "exp_dan"
 	ui._refresh_bag()
 	await _wait(6)
 	if not await _capture(OUT_BAG):

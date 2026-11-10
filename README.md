@@ -3,7 +3,7 @@
 横版侧视武侠 MMO 原型。客户端 **Godot 4.7（GDScript）**，服务端 **Go 1.22 + SQLite**，  
 自定义 WebSocket 二进制协议（主码/子码分层，单源登记 + 双端生成）。
 
-当前版本 **0.4.0-beta**，完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **0.5.0-beta**，完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 已实现
 
@@ -51,6 +51,7 @@ godot --path client res://tests/battle_smoke.tscn
 godot --path client res://tests/walk_smoke.tscn
 godot --path client res://tests/remote_smoke.tscn
 godot --path client res://tests/quest_smoke.tscn
+godot --path client res://tests/settings_smoke.tscn
 ```
 
 ## 仓库政策

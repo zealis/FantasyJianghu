@@ -27,6 +27,13 @@ type UnitStats struct {
 // 锚点线性插值（数值规范 §5.2 逐字）→ 低级幂律外延（ClassBook 参数，助手定案）
 // → 肉盾派生系数（§5.3）。登记待《战斗属性计算表》立项回归校准。
 func DerivedStats(level int, faction string, cfg config.BattleData) (UnitStats, error) {
+	return DerivedStatsWithPoints(level, faction, cfg, nil, nil)
+}
+
+// DerivedStatsWithPoints 在基线派生之上叠加一级属性点的扁平派生收益（数值规范 §1.3 ③）。
+// gains 为配置 point_gains（str/spi/agi/con → 二级属性），points 为角色已分配点。
+func DerivedStatsWithPoints(level int, faction string, cfg config.BattleData,
+	gains map[string]map[string]int, points map[string]int) (UnitStats, error) {
 	_ = cfg // 占位保持签名稳定；基线取自 cfg.Formula
 	class := cfg.ClassByFaction(faction)
 	if class == nil {
@@ -40,7 +47,7 @@ func DerivedStats(level int, faction string, cfg config.BattleData) (UnitStats, 
 	if class.DeriveFrom != "" {
 		applyCoeff(&base, class.Coeff)
 	}
-	return UnitStats{
+	st := UnitStats{
 		HP: base.HP, MP: base.MP,
 		PAtk: base.PAtk, MAtk: base.MAtk,
 		PDef: base.PDef, MDef: base.MDef,
@@ -55,7 +62,42 @@ func DerivedStats(level int, faction string, cfg config.BattleData) (UnitStats, 
 		SealHit: 0,
 		SealRes: int(cfg.Formula.Control.SealResBase * 10000), // 10%
 		Flee:    0,
-	}, nil
+	}
+	applyPointGains(&st, gains, points)
+	return st, nil
+}
+
+// applyPointGains 叠加一级属性点的扁平派生收益（§1.3 ③；dodge 万分制）。
+func applyPointGains(st *UnitStats, gains map[string]map[string]int, points map[string]int) {
+	if len(gains) == 0 || len(points) == 0 {
+		return
+	}
+	for primary, n := range points {
+		if n <= 0 {
+			continue
+		}
+		for sec, per := range gains[primary] {
+			v := per * n
+			switch sec {
+			case "hp":
+				st.HP += v
+			case "mp":
+				st.MP += v
+			case "patk":
+				st.PAtk += v
+			case "matk":
+				st.MAtk += v
+			case "pdef":
+				st.PDef += v
+			case "mdef":
+				st.MDef += v
+			case "speed":
+				st.Speed += v
+			case "dodge":
+				st.PDodge += v
+			}
+		}
+	}
 }
 
 func anchorInterpolate(level int, class *config.BattleClass, book config.ClassBook) (config.AnchorStat, error) {

@@ -34,7 +34,10 @@ const SUB_KICK := 1
 const SUB_PING := 0
 ## 主码 2 账号/角色
 const SUB_AUTH := 1
+const SUB_CHAR_ALLOCATE := 5
+const SUB_CHAR_BREAKTHROUGH := 4
 const SUB_CHAR_CREATE := 2
+const SUB_CHAR_RESET_POINTS := 6
 const SUB_CHAR_SELECT := 3
 ## 主码 3 世界/地图/移动
 const SUB_ENTER_SCENE := 1
@@ -55,6 +58,14 @@ const SUB_BATTLE_RESTORE := 7
 const SUB_BATTLE_RESULT := 5
 ## 主码 5 背包/物品
 const SUB_BAG_LIST := 1
+const SUB_BAG_LOCK := 5
+const SUB_BAG_SELL := 4
+const SUB_BAG_SORT := 3
+const SUB_BAG_USE := 2
+## 主码 6 装备/强化
+const SUB_EQUIP_REMOVE := 2
+const SUB_EQUIP_VIEW := 3
+const SUB_EQUIP_WEAR := 1
 ## 主码 10 NPC/商店
 const SUB_NPC_TALK := 1
 ## 主码 11 任务

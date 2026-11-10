@@ -86,6 +86,7 @@ type Data struct {
 	Battle   BattleData            // 战斗域（formula/classes/skills/monsters）
 	Quests   QuestData             // 任务域（GDD §9：主线链 + 三类日常）
 	Items    ItemData              // 物品字典最小集（任务奖励引用 + 背包容量）
+	Levels   LevelData             // 等级域（GDD §4.2：经验曲线 + 突破关口）
 }
 
 // LineCapacity 按场景类型取每线人数上限（V1.27 阈值）；未知类型返回 0。
@@ -198,6 +199,9 @@ func Validate(d Data) error {
 	if err := validateQuests(d); err != nil {
 		return err
 	}
+	if err := validateLevels(d.Levels); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -261,6 +265,11 @@ func Load(dir string) (Data, error) {
 		return data, err
 	}
 	data.Items = items
+	levels, err := loadLevelDir(dir)
+	if err != nil {
+		return data, err
+	}
+	data.Levels = levels
 	data.Scenes = map[string]SceneLogic{}
 	for name := range files {
 		if filepath.Dir(name) != "scenes" {

@@ -74,6 +74,13 @@ func TestValidateQuestsRejects(t *testing.T) {
 		{"前置成环", func(d *Data) { d.Quests.Quests[0].Prev = "main_002" }},
 		{"日常引用前置", func(d *Data) { d.Quests.Quests[2].Prev = "main_001" }},
 		{"缺描述", func(d *Data) { d.Quests.Quests[0].Desc = "" }},
+		{"品质非法", func(d *Data) { d.Items.Items[0].Quality = "神品" }},
+		{"使用效果类型非法", func(d *Data) { d.Items.Items[0].Use = &ItemUseDef{Kind: "heal_hp", Value: 10} }},
+		{"使用效果数值非正", func(d *Data) { d.Items.Items[0].Use = &ItemUseDef{Kind: "exp", Value: 0} }},
+		{"装备槽非法", func(d *Data) { d.Items.Items[0].Slot = "wing" }},
+		{"装备缺槽", func(d *Data) { d.Items.Items[0].Category = "装备" }},
+		{"装备属性键非法", func(d *Data) { d.Items.Items[0].Stats = map[string]int{"luck": 1} }},
+		{"装备属性负值", func(d *Data) { d.Items.Items[0].Stats = map[string]int{"hp": -1} }},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -87,5 +94,21 @@ func TestValidateQuestsRejects(t *testing.T) {
 				t.Fatalf("错误信息不可读: %v", err)
 			}
 		})
+	}
+}
+
+// TestValidateQuestsAcceptsItemUse 品质与合法 use 定义应通过（M2c 切片一）。
+func TestValidateQuestsAcceptsItemUse(t *testing.T) {
+	d := questFixture()
+	d.Items.Items[0].Quality = "良品"
+	d.Items.Items[0].Use = &ItemUseDef{Kind: "exp", Value: 100}
+	if err := validateQuests(d); err != nil {
+		t.Fatalf("合法品质/use 应通过: %v", err)
+	}
+	if got := d.Items.ItemQuality(d.Items.Items[0].ID); got != "良品" {
+		t.Fatalf("ItemQuality = %q, 期望良品", got)
+	}
+	if got := d.Items.ItemQuality("不存在"); got != "凡品" {
+		t.Fatalf("缺省品质 = %q, 期望凡品", got)
 	}
 }

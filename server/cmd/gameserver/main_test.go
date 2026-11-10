@@ -71,6 +71,14 @@ func packTestConfig(t *testing.T) string {
 	if err := os.WriteFile(filepath.Join(src, "quest", "quests.json"), []byte(quests), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	// 等级域（M2c 切片三起为打包必填）。
+	if err := os.MkdirAll(filepath.Join(src, "level"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	levels := `{"max_level":89,"exp_base":100,"exp_exponent":1.5,"gates":[29,39,49,59,69,79],"points_per_level":4}`
+	if err := os.WriteFile(filepath.Join(src, "level", "levels.json"), []byte(levels), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	// 战斗域源（真实仓库文件）。
 	battleRoot, err := filepath.Abs(filepath.Join("..", "..", "configs", "source", "battle"))
 	if err != nil {

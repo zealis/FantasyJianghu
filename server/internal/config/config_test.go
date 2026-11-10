@@ -49,6 +49,14 @@ func packValidSource(t *testing.T) string {
 	if err := os.WriteFile(filepath.Join(src, "quest", "quests.json"), []byte(quests), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	// M2c 切片三：等级域为必填项。
+	if err := os.MkdirAll(filepath.Join(src, "level"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	levels := `{"max_level":89,"exp_base":100,"exp_exponent":1.5,"gates":[29,39,49,59,69,79],"points_per_level":4}`
+	if err := os.WriteFile(filepath.Join(src, "level", "levels.json"), []byte(levels), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	copyBattleSrc(t, src)
 	out := t.TempDir()
 	if err := Pack(src, out, "1.0.0"); err != nil {
@@ -239,6 +247,8 @@ func minimalValidData() Data {
 		Scenes: map[string]SceneLogic{
 			"清河村": {MapID: "清河村", Type: "town", Width: 2352, Height: 1008, GroundY: 900, Walk: WalkRange{XMin: 80, XMax: 2272}},
 		},
+		Levels: LevelData{MaxLevel: 89, ExpBase: 100, ExpExponent: 1.5,
+			Gates: []int{29, 39, 49, 59, 69, 79}, PointsPerLevel: 4},
 		Factions: []FactionInfo{
 			{Name: "断岳剑宗", Category: "物理", Color: "朱橙", Residence: "高天原·断剑崖", Weapon: "剑", Feature: "暴击叠「剑意」，层数越高暴伤越高；专收残血", Secret: "《断岳剑经》"},
 			{Name: "破军枪府", Category: "物理", Color: "朱橙", Residence: "葬剑原·陷阵营", Weapon: "枪", Feature: "连击与破甲，击杀刷新连势，越战越勇", Secret: "《破军枪谱》"},

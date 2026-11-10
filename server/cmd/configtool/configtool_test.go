@@ -23,8 +23,8 @@ func writeSource(t *testing.T, appJSON, sceneJSON string) string {
 	if err := os.WriteFile(filepath.Join(dir, "factions.json"), []byte(validFactions()), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	// 任务域与物品字典（M2b 起为打包必填）。
-	for _, d := range []string{"item", "quest"} {
+	// 任务域与物品字典（M2b 起为打包必填）；等级域（M2c 切片三起必填）。
+	for _, d := range []string{"item", "quest", "level"} {
 		if err := os.MkdirAll(filepath.Join(dir, d), 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -39,6 +39,10 @@ func writeSource(t *testing.T, appJSON, sceneJSON string) string {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "quest", "quests.json"), []byte(quests), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	levels := `{"max_level":89,"exp_base":100,"exp_exponent":1.5,"gates":[29,39,49,59,69,79],"points_per_level":4}`
+	if err := os.WriteFile(filepath.Join(dir, "level", "levels.json"), []byte(levels), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// 战斗域源（真实仓库文件）。

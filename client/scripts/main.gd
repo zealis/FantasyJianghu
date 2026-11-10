@@ -17,6 +17,7 @@ func _on_snapshot_applied() -> void:
 	$DialogueLayer.visible = true
 	# 进场/战斗回世界后拉任务与背包全量（服务端权威，登录恢复也走这条）。
 	QuestStore.refresh()
+	EquipStore.refresh()
 
 ## 断线/被踢：回登录层（登录页负责展示原因与重登入口，M10）。
 func _on_disconnected(_msg: String) -> void:
@@ -29,6 +30,16 @@ func _on_disconnected(_msg: String) -> void:
 	QuestStore.quests = []
 	QuestStore.loaded = false
 	QuestStore.changed.emit()
+
+## 设置底栏：切换账号（保留账号名）/退出登录（连账号名一起清）回登录层。
+func return_to_login(clear_account: bool) -> void:
+	Network.disconnect_ws()
+	_on_disconnected("")
+	$BattleCanvas/BattleLayer.visible = false
+	SessionStore.token = ""
+	var login := $LoginLayer.get_node_or_null("Login")
+	if login and login.has_method("reset_for_logout"):
+		login.call("reset_for_logout", clear_account)
 
 func _on_dialogue_action(action: String) -> void:
 	print("[main] dialogue action: ", action)

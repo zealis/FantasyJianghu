@@ -63,6 +63,10 @@
           {
             "id": "stone_qianghua",
             "count": 3
+          },
+          {
+            "id": "sword_wood",
+            "count": 1
           }
         ]
       }
@@ -156,7 +160,12 @@
         "exp": 60,
         "xiuwei": 5,
         "gold": 200,
-        "items": []
+        "items": [
+          {
+            "id": "exp_dan",
+            "count": 1
+          }
+        ]
       }
     },
     {

@@ -90,6 +90,25 @@ var migrations = []string{
 		count        INTEGER NOT NULL DEFAULT 0,
 		PRIMARY KEY (character_id, day, category)
 	)`,
+	// v11: M2c 切片二 装备穿戴（一槽一件；强化/镶嵌实例属性后续）。
+	`CREATE TABLE IF NOT EXISTS character_equips (
+		character_id INTEGER NOT NULL REFERENCES characters(id),
+		slot         TEXT NOT NULL,
+		item_id      TEXT NOT NULL,
+		PRIMARY KEY (character_id, slot)
+	)`,
+	// v12: M2c 切片三 突破关口（已跨越的最高关口；0=未突破）。
+	`ALTER TABLE characters ADD COLUMN breakthrough INTEGER NOT NULL DEFAULT 0`,
+	// v13: M2c 切片三 升级属性点（每级 +4，分配 UI 待加点轮）。
+	`ALTER TABLE characters ADD COLUMN unspent_points INTEGER NOT NULL DEFAULT 0`,
+	// v14-v17: M2c 切片四 一级属性已分配点（力量/灵力/敏捷/体质）。
+	`ALTER TABLE characters ADD COLUMN str INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE characters ADD COLUMN spi INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE characters ADD COLUMN agi INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE characters ADD COLUMN con INTEGER NOT NULL DEFAULT 0`,
+	// v18: M2c 切片五 背包整理/出售/锁定（格子排序号 + 锁定标记）。
+	`ALTER TABLE character_items ADD COLUMN sort_no INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE character_items ADD COLUMN locked INTEGER NOT NULL DEFAULT 0`,
 }
 
 // Migrate 依次应用未执行的迁移；重复执行幂等。

@@ -60,6 +60,10 @@ func TestGenerateGDScriptSubCodes(t *testing.T) {
 		"const SUB_BATTLE_FRAME := 3", "const SUB_BATTLE_ACK := 4",
 		"const SUB_BATTLE_RESULT := 5", "const SUB_BATTLE_RESTORE := 7",
 		"const SUB_ENTER_SCENE := 1", "const SUB_MOVE := 2", "const SUB_KICK := 1",
+		"const SUB_BAG_LIST := 1", "const SUB_BAG_USE := 2",
+		"const SUB_EQUIP_WEAR := 1", "const SUB_EQUIP_REMOVE := 2", "const SUB_EQUIP_VIEW := 3",
+		"const SUB_CHAR_BREAKTHROUGH := 4",
+		"const SUB_CHAR_ALLOCATE := 5", "const SUB_CHAR_RESET_POINTS := 6",
 	} {
 		if !strings.Contains(got, s) {
 			t.Errorf("生成的 GDScript 缺子码常量 %q", s)
@@ -83,6 +87,10 @@ func TestGenerateGoRegistry(t *testing.T) {
 		"SubLineList = 7", "SubSwitchLine = 8",
 		"SubBattleEnter = 1", "SubBattleCmd = 2", "SubBattleFrame = 3",
 		"SubBattleAck = 4", "SubBattleResult = 5", "SubBattleLeave = 6", "SubBattleRestore = 7",
+		"SubBagList = 1", "SubBagUse = 2",
+		"SubEquipWear = 1", "SubEquipRemove = 2", "SubEquipView = 3",
+		"SubCharBreakthrough = 4",
+		"SubCharAllocate = 5", "SubCharResetPoints = 6",
 		`"系统/心跳/踢下线"`, `"抽奖"`,
 	} {
 		if !strings.Contains(got, s) {

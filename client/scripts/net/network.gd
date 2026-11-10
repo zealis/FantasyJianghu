@@ -60,6 +60,15 @@ func connect_and_auth(url: String = SERVER_URL, token: String = SessionStore.tok
 		authenticated_failed.emit(str(resp.get("msg", "鉴权失败")))
 	return resp
 
+## 主动断线（切换账号/退出登录）：静默关闭，不 emit disconnected，调用方自行回登录层。
+func disconnect_ws() -> void:
+	_socket.close()
+	offline = true
+	_authenticated = false
+	_heartbeat.stop()
+	_responses.clear()
+	_waiting.clear()
+
 ## 发送并等待同序号回包（超时返回 code=-1）。仅限已连接状态。
 func send_and_wait(main_code: int, sub_code: int, payload: Dictionary, timeout_ms: int = 4000) -> Dictionary:
 	var seq := send(main_code, sub_code, payload)

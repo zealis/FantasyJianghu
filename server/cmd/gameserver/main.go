@@ -23,6 +23,7 @@ import (
 	"fantasy-jianghu/server/internal/battle"
 	"fantasy-jianghu/server/internal/character"
 	"fantasy-jianghu/server/internal/config"
+	"fantasy-jianghu/server/internal/equip"
 	"fantasy-jianghu/server/internal/gateway"
 	"fantasy-jianghu/server/internal/item"
 	"fantasy-jianghu/server/internal/kv"
@@ -115,6 +116,7 @@ func buildServer(opts Options) (*ServerHandle, error) {
 	// M2b 任务域：进度来源为战斗终局（kill）、NPC 对话（talk）、进场（visit）。
 	questSvc := quest.NewService(db.Quests, db.Characters, db.Items, data, gw, protocol.SubQuestProgress)
 	itemSvc := item.NewService(db.Items, data)
+	equipSvc := equip.NewService(db.Items, db.Equips, db.Characters, data)
 	npcSvc := npc.NewService(data, questSvc)
 	worldSvc.OnEnter = func(charID int64, mapID string) {
 		_ = questSvc.RecordProgress(context.Background(), charID, "visit", mapID, 1)
@@ -126,6 +128,9 @@ func buildServer(opts Options) (*ServerHandle, error) {
 	rt.Register(protocol.MainAccount, protocol.SubAuth, acct.HandleWSAuth)
 	rt.Register(protocol.MainAccount, protocol.SubCharCreate, chars.HandleCreate)
 	rt.Register(protocol.MainAccount, protocol.SubCharSelect, chars.HandleSelect)
+	rt.Register(protocol.MainAccount, protocol.SubCharBreakthrough, chars.HandleBreakthrough)
+	rt.Register(protocol.MainAccount, protocol.SubCharAllocate, chars.HandleAllocate)
+	rt.Register(protocol.MainAccount, protocol.SubCharResetPoints, chars.HandleResetPoints)
 	rt.Register(protocol.MainWorld, protocol.SubEnterScene, worldSvc.HandleEnter)
 	rt.Register(protocol.MainWorld, protocol.SubMove, worldSvc.HandleMove)
 	rt.Register(protocol.MainWorld, protocol.SubLeave, worldSvc.HandleLeave)
@@ -136,6 +141,13 @@ func buildServer(opts Options) (*ServerHandle, error) {
 	rt.Register(protocol.MainCode4, protocol.SubBattleAck, battleSvc.HandleAck)
 	rt.Register(protocol.MainCode4, protocol.SubBattleRestore, battleSvc.HandleRestore)
 	rt.Register(protocol.MainCode5, protocol.SubBagList, itemSvc.HandleList)
+	rt.Register(protocol.MainCode5, protocol.SubBagUse, itemSvc.HandleUse)
+	rt.Register(protocol.MainCode5, protocol.SubBagSort, itemSvc.HandleSort)
+	rt.Register(protocol.MainCode5, protocol.SubBagSell, itemSvc.HandleSell)
+	rt.Register(protocol.MainCode5, protocol.SubBagLock, itemSvc.HandleLock)
+	rt.Register(protocol.MainCode6, protocol.SubEquipWear, equipSvc.HandleWear)
+	rt.Register(protocol.MainCode6, protocol.SubEquipRemove, equipSvc.HandleRemove)
+	rt.Register(protocol.MainCode6, protocol.SubEquipView, equipSvc.HandleView)
 	rt.Register(protocol.MainCode10, protocol.SubNpcTalk, npcSvc.HandleTalk)
 	rt.Register(protocol.MainCode11, protocol.SubQuestList, questSvc.HandleList)
 	rt.Register(protocol.MainCode11, protocol.SubQuestAccept, questSvc.HandleAccept)

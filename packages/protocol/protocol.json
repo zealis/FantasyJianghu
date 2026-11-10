@@ -31,7 +31,10 @@
     "2": {
       "SubAuth": 1,
       "SubCharCreate": 2,
-      "SubCharSelect": 3
+      "SubCharSelect": 3,
+      "SubCharBreakthrough": 4,
+      "SubCharAllocate": 5,
+      "SubCharResetPoints": 6
     },
     "3": {
       "SubEnterScene": 1,
@@ -53,7 +56,16 @@
       "SubBattleRestore": 7
     },
     "5": {
-      "SubBagList": 1
+      "SubBagList": 1,
+      "SubBagUse": 2,
+      "SubBagSort": 3,
+      "SubBagSell": 4,
+      "SubBagLock": 5
+    },
+    "6": {
+      "SubEquipWear": 1,
+      "SubEquipRemove": 2,
+      "SubEquipView": 3
     },
     "10": {
       "SubNpcTalk": 1

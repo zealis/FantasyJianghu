@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="幻想江湖 Fantasy Jianghu"
-config/version="0.4.0-beta"
+config/version="0.5.0-beta"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://assets/sprites/player/idle_0.png"
@@ -19,9 +19,11 @@ config/icon="res://assets/sprites/player/idle_0.png"
 [autoload]
 
 Network="*res://scripts/net/network.gd"
+Settings="*res://scripts/state/settings_store.gd"
 SessionStore="*res://scripts/state/session_store.gd"
 WorldStore="*res://scripts/state/world_store.gd"
 QuestStore="*res://scripts/state/quest_store.gd"
+EquipStore="*res://scripts/state/equip_store.gd"
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [display]

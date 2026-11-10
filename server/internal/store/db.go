@@ -16,6 +16,7 @@ type DB struct {
 	Battles    *BattleLogsRepo
 	Quests     *QuestRepo
 	Items      *ItemsRepo
+	Equips     *EquipsRepo
 }
 
 // Open 打开主库并按 §2.1 口径设 PRAGMA（WAL、busy_timeout、外键）。
@@ -43,6 +44,7 @@ func Open(dsn string) (*DB, error) {
 	db.Battles = &BattleLogsRepo{db: sqlDB}
 	db.Quests = &QuestRepo{db: sqlDB}
 	db.Items = &ItemsRepo{db: sqlDB}
+	db.Equips = &EquipsRepo{db: sqlDB}
 	return db, nil
 }
 

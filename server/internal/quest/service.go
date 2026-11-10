@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"fantasy-jianghu/server/internal/battle"
 	"fantasy-jianghu/server/internal/config"
 	"fantasy-jianghu/server/internal/session"
 	"fantasy-jianghu/server/internal/store"
@@ -176,12 +177,29 @@ func (s *Service) buildList(ctx context.Context, charID int64) (map[string]any, 
 	for _, cat := range []string{"normal", "sect", "dungeon"} {
 		daily[cat] = dailyView{Used: doneToday[cat] + activeDaily[cat], Limit: s.cfg.Quests.DailyLimit(cat)}
 	}
+	expNext := s.cfg.Levels.ExpToNext(c.Level)
+	gateReady := s.cfg.Levels.IsGate(c.Level) && c.Breakthrough < c.Level && c.Exp >= expNext
+	// 属性预览（加点界面右栏）需要的派生值：服务端权威计算，客户端只做展示。
+	statsView := map[string]any{}
+	if st, err := battle.DerivedStatsWithPoints(c.Level, c.Faction, s.cfg.Battle,
+		s.cfg.Levels.PointGains, c.PointsMap()); err == nil {
+		statsView = map[string]any{
+			"hp": st.HP, "mp": st.MP, "patk": st.PAtk, "matk": st.MAtk,
+			"pdef": st.PDef, "mdef": st.MDef, "speed": st.Speed,
+			"pdodge": st.PDodge, "pcrit": st.PCrit, "phit": st.PHit,
+		}
+	}
 	return map[string]any{
-		"level":  c.Level,
-		"exp":    c.Exp,
-		"wallet": map[string]any{"gold": wallet.Gold, "xiuwei": wallet.Xiuwei, "yuanbao": wallet.Yuanbao},
-		"daily":  daily,
-		"quests": views,
+		"level":          c.Level,
+		"exp":            c.Exp,
+		"exp_next":       expNext,
+		"gate_ready":     gateReady,
+		"unspent_points": c.UnspentPoints,
+		"points":         c.PointsMap(),
+		"stats":          statsView,
+		"wallet":         map[string]any{"gold": wallet.Gold, "xiuwei": wallet.Xiuwei, "yuanbao": wallet.Yuanbao},
+		"daily":          daily,
+		"quests":         views,
 	}, nil
 }
 
@@ -353,6 +371,8 @@ func (s *Service) HandleSubmit(ctx context.Context, sess *session.Session, paylo
 		Day: s.today(), DailyCategory: cat, DailyLimit: limit,
 		Exp: def.Rewards.Exp, Xiuwei: def.Rewards.Xiuwei, Gold: def.Rewards.Gold,
 		Items: items, StackOf: s.cfg.Items.ItemStack, BagCapacity: s.cfg.Items.BagCapacity,
+		Curve: store.LevelCurve{ExpToNext: s.cfg.Levels.ExpToNext, IsGate: s.cfg.Levels.IsGate,
+			MaxLevel: s.cfg.Levels.MaxLevel, PointsPerLevel: s.cfg.Levels.PointsPerLevel},
 	})
 	switch {
 	case errors.Is(err, store.ErrBagFull):
