@@ -26,6 +26,17 @@ func (d LevelData) ExpToNext(level int) int {
 	return int(math.Round(d.ExpBase * math.Pow(float64(level), d.ExpExponent)))
 }
 
+// NextGate 返回大于 level 的下一个突破关口；已过最后一个关口或满级返回 0。
+// 供客户端区分「当前是关口（需手动突破）」与「普通等级（自动升级）」。
+func (d LevelData) NextGate(level int) int {
+	for _, g := range d.Gates {
+		if g > level {
+			return g
+		}
+	}
+	return 0
+}
+
 // IsGate 判断 level 是否为突破关口（离开该级需手动突破）。
 func (d LevelData) IsGate(level int) bool {
 	for _, g := range d.Gates {

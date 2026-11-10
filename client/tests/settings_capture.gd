@@ -5,6 +5,14 @@ extends Node
 const OUT := "D:/project/Fantasy-Jianghu/client/tests/settings_panel.png"
 
 func _ready() -> void:
+	# 注入一组「非关口」真实数据（与玩家反馈的 LV4 状态一致）：
+	# 用于确认突破行不再误导成「要手动升级」。
+	QuestStore.level = 4
+	QuestStore.exp = 437
+	QuestStore.exp_next = 800
+	QuestStore.unspent_points = 0
+	QuestStore.gate_ready = false
+	QuestStore.next_gate = 29
 	await get_tree().process_frame
 	var layer := CanvasLayer.new()
 	layer.layer = 5

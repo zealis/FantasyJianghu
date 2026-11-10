@@ -115,18 +115,28 @@ func _run() -> void:
 	Settings.set_value("speed_index", 0)
 
 	# 等级/经验回填 session（HUD 转真）与突破按钮门禁（M2c 切片三）。
+	# 非关口（GDD §4.2：普通等级经验满自动升级）→ 不显示突破按钮，文案点明自动升级。
 	QuestStore._apply({"level": 2, "exp": 50, "exp_next": 283, "gate_ready": false,
-		"unspent_points": 4, "wallet": QuestStore.wallet, "daily": QuestStore.daily, "quests": QuestStore.quests})
+		"next_gate": 29, "unspent_points": 4, "wallet": QuestStore.wallet,
+		"daily": QuestStore.daily, "quests": QuestStore.quests})
 	if SessionStore.level != 2 or absf(SessionStore.exp_ratio - 50.0 / 283.0) > 0.001:
 		_fail("等级/经验条未回填 session")
 		return
-	if not _panel._break_btn.disabled:
-		_fail("非关口突破按钮应置灰")
+	if _panel._break_btn.visible:
+		_fail("非关口不应显示突破按钮")
 		return
-	QuestStore.gate_ready = true
-	QuestStore.changed.emit()
-	if _panel._break_btn.disabled:
-		_fail("关口经验满突破按钮应可用")
+	if not _panel._break_label.text.contains("自动升级"):
+		_fail("非关口文案应说明自动升级: %s" % _panel._break_label.text)
+		return
+	# 关口且经验满 → 按钮出现且可用。
+	QuestStore._apply({"level": 29, "exp": 1100, "exp_next": 1100, "gate_ready": true,
+		"next_gate": 29, "unspent_points": 0, "wallet": QuestStore.wallet,
+		"daily": QuestStore.daily, "quests": QuestStore.quests})
+	if not _panel._break_btn.visible or _panel._break_btn.disabled:
+		_fail("关口经验满时突破按钮应可用")
+		return
+	if not _panel._break_label.text.contains("可突破"):
+		_fail("关口文案应提示可突破: %s" % _panel._break_label.text)
 		return
 	QuestStore.gate_ready = false
 	QuestStore.changed.emit()

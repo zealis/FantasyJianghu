@@ -227,7 +227,9 @@ func _slider_row(text: String, key: String) -> Control:
 	return hb
 
 func _break_row() -> Control:
-	var hb := _row_head("突破升级")
+	# 文档口径（GDD §4.2）：普通等级经验满**自动升级**，只有 29/39/49/59/69/79 是突破关口，
+	# 需要手动「突破升级」才能跨越。所以本行只在关口等级出现按钮，平时只显示等级与经验。
+	var hb := _row_head("等级与突破")
 	_break_label = _label("", 12, C_MUTED)
 	_break_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_break_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -328,10 +330,23 @@ func _sync() -> void:
 		if cb and cb.button_pressed != bool(Settings.get(key)):
 			cb.button_pressed = bool(Settings.get(key))
 	if _break_btn != null:
-		_break_btn.disabled = not QuestStore.gate_ready
-		_break_btn.tooltip_text = "需恰处突破关口且经验已满" if not QuestStore.gate_ready else "跨越当前关口"
-		_break_label.text = "等级 %d · 经验 %d/%d · 未分配点 %d" % [
-			QuestStore.level, QuestStore.exp, QuestStore.exp_next, QuestStore.unspent_points]
+		var lv := QuestStore.level
+		var gate := QuestStore.next_gate
+		var at_gate := gate > 0 and lv == gate
+		var head := "等级 %d · 经验 %d/%d · 未分配点 %d" % [
+			lv, QuestStore.exp, QuestStore.exp_next, QuestStore.unspent_points]
+		if at_gate:
+			_break_btn.visible = true
+			_break_btn.disabled = not QuestStore.gate_ready
+			_break_btn.tooltip_text = "跨越当前关口" if QuestStore.gate_ready else "经验满后自动停在此关口，需手动突破"
+			_break_label.text = head + ("· 经验已满，可突破" if QuestStore.gate_ready else "· 经验满后可突破")
+		else:
+			# 非关口等级：隐藏突破按钮，明确「自动升级」，消除「要不要手动点」的误解。
+			_break_btn.visible = false
+			if gate > 0:
+				_break_label.text = head + "· 经验满自动升级（%d 级为突破关口）" % gate
+			else:
+				_break_label.text = head + "· 经验满自动升级"
 
 func _logout(clear_account: bool) -> void:
 	close()

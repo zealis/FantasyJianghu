@@ -12,6 +12,7 @@ var level: int = 1
 var exp: int = 0
 var exp_next: int = 0        # 当前级升级需求（11/1，M2c 切片三）
 var gate_ready: bool = false # 恰处关口且经验满，可手动突破
+var next_gate: int = 0       # 下一个突破关口等级（0=已过最后关口或满级）
 var unspent_points: int = 0  # 未分配属性点
 var points: Dictionary = {"str": 0, "spi": 0, "agi": 0, "con": 0}  # 已分配一级属性
 var stats: Dictionary = {}   # 派生属性（11/1 stats，加点界面预览用）
@@ -221,6 +222,7 @@ func _apply(payload: Dictionary) -> void:
 	exp = int(payload.get("exp", exp))
 	exp_next = int(payload.get("exp_next", exp_next))
 	gate_ready = bool(payload.get("gate_ready", false))
+	next_gate = int(payload.get("next_gate", 0))
 	unspent_points = int(payload.get("unspent_points", 0))
 	points = payload.get("points", points)
 	stats = payload.get("stats", stats)
