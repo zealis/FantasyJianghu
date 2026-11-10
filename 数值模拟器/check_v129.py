@@ -299,6 +299,11 @@ def check_hearts():
                   got_m == DOC_HEART_MECHANICS[faction], "%s" % got_m)
             check("门派 %s 机制段均有落地说明" % faction,
                   all((m.get("note") or "").strip() for m in mechs), "%d 条" % len(mechs))
+        # 感电施加权：秘籍表 V1.2 §4 注 —— 只由惊雷殿《惊雷宝典》声明 shock_on_hit。
+        want_shock = faction == "惊雷殿"
+        got_shock = bool(passive.get("shock_on_hit"))
+        check("门派 %s 感电施加权与 V1.2 注文一致" % faction, got_shock == want_shock,
+              "shock_on_hit=%s" % got_shock)
     extra = [f for f in found if f not in DOC_HEARTS]
     check("未出现表外门派心法", not extra, str(extra))
 

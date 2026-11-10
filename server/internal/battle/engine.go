@@ -41,12 +41,13 @@ type Unit struct {
 	Defending       bool
 	Hosted          bool // 本回合被托管（战报标记）
 	Alive           bool
-	Slot            int // 4v4 站位槽（0..3，客户端按此布局）
-	ShockStacks     int // M2a-2 感电层数（上限取 Effects.Shock.MaxStacks）
-	ShockDOTTurns   int // 感电 DOT 剩余回合
-	ShockDOTPower   int // 每回合 DOT 基准（施加者法攻 × 层数 × 系数，施加时快照）
-	ReflectPct      int // 单位自身反伤万分制（怪物/法宝给定值；数值规范 §2.4）
-	ReflectStacks   int // 金刚印层数（心法被动，受击叠层，上限取 Stats.ReflectMaxStacks）
+	Slot            int  // 4v4 站位槽（0..3，客户端按此布局）
+	ShockStacks     int  // M2a-2 感电层数（上限取 Effects.Shock.MaxStacks）
+	ShockDOTTurns   int  // 感电 DOT 剩余回合
+	ShockDOTPower   int  // 每回合 DOT 基准（施加者法攻 × 层数 × 系数，施加时快照）
+	ReflectPct      int  // 单位自身反伤万分制（怪物/法宝给定值；数值规范 §2.4）
+	ReflectStacks   int  // 金刚印层数（心法被动，受击叠层，上限取 Stats.ReflectMaxStacks）
+	ShockOnHit      bool // 持有《惊雷宝典》：法术命中可施加感电（惊雷殿专属，其他门派不可施加）
 }
 
 // Event 为战报事件（客户端播放的最小单元）。
@@ -459,6 +460,11 @@ func (b *Battle) applyHeal(evs []Event, healer, target *Unit, base int, flags ma
 func (b *Battle) applyShock(evs []Event, actor, target *Unit) []Event {
 	sh := b.F.Effects.Shock
 	if sh.MaxStacks <= 0 || actor == nil || target == nil {
+		return evs
+	}
+	// 感电是惊雷殿专属（秘籍表 V1.2 §4 注）：只有持有《惊雷宝典》心法的施法者能施加，
+	// 其他门派法术命中不叠层。判定来自心法被动，不设通用开关。
+	if !actor.ShockOnHit {
 		return evs
 	}
 	if target.ShockStacks < sh.MaxStacks {

@@ -336,6 +336,7 @@ func shockSkill() config.SkillDef {
 
 func TestShockStacksDOTAndCap(t *testing.T) {
 	a := mkUnit(1, "雷法", 0, 1000, 100, 99999)
+	a.ShockOnHit = true // 感电施加权来自《惊雷宝典》心法（秘籍表 V1.2 §4 注）
 	a.Skills = []config.SkillDef{shockSkill()}
 	d := mkUnit(2, "木桩", 1, 100, 100, 99999)
 	b := deterministicBattle(formulaCfg(), a, d)
@@ -553,5 +554,32 @@ func TestSealHitEntersControlFormula(t *testing.T) {
 	caster.BaseStats.SealHit = 1000 // 封印命中 +10%（万分制）
 	if !b.controlRoll("封技能", 70, caster, tgt, 0) {
 		t.Fatal("封印命中 +10% 后 (70+10)%×0.9=72% 应命中 65% 随机")
+	}
+}
+
+// TestShockOnlyFromLeidian 感电是惊雷殿专属（秘籍表 V1.2 §4 注）：
+// 只有持有《惊雷宝典》心法的施法者，法术命中才施加；其他门派法术命中不叠层。
+func TestShockOnlyFromLeidian(t *testing.T) {
+	run := func(shockOnHit bool) (int, int) {
+		a := mkUnit(1, "法师", 0, 1000, 100, 99999)
+		a.MP = 99999
+		a.ShockOnHit = shockOnHit
+		sk := shockSkill()
+		a.Skills = []config.SkillDef{sk}
+		d := mkUnit(2, "木桩", 1, 100, 100, 99999)
+		b := &Battle{F: formulaCfg(), rng: flatRng(0.0), Units: []*Unit{a, d}, Turn: 1}
+		shocks := 0
+		for _, e := range b.executeSkill(a, []*Unit{d}, sk, 0) {
+			if e.Type == "shock" {
+				shocks++
+			}
+		}
+		return d.ShockStacks, shocks
+	}
+	if stacks, shocks := run(true); stacks != 1 || shocks != 1 {
+		t.Fatalf("雷殿（持惊雷宝典）法术命中应叠 1 层感电，实际 stacks=%d events=%d", stacks, shocks)
+	}
+	if stacks, shocks := run(false); stacks != 0 || shocks != 0 {
+		t.Fatalf("非雷殿法术命中不得施加感电，实际 stacks=%d events=%d", stacks, shocks)
 	}
 }

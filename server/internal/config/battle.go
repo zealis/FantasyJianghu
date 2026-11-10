@@ -207,6 +207,10 @@ type PassiveDef struct {
 	PDodgePct  int `json:"pdodge_pct"`   // 闪避 +%
 	CritDmgPct int `json:"crit_dmg_pct"` // 暴击伤害 +%（断岳剑经）
 
+	// ShockOnHit 标记「法术命中可施加感电」——感电是惊雷殿专属机制（秘籍表 V1.2 §4 注）：
+	// 判定口径按「持有《惊雷宝典》心法」，不设通用开关，其他门派不施加。
+	ShockOnHit bool `json:"shock_on_hit"`
+
 	// 金刚印：受击叠层，每层反伤 +reflect_per_stack，最多 reflect_max_stacks 层。
 	// 禅院「挨打就有反伤」的来源，与品质共鸣（微调）分列，互不替代。
 	ReflectPerStack  int `json:"reflect_per_stack"`

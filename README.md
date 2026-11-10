@@ -3,7 +3,7 @@
 横版侧视武侠 MMO 原型。客户端 **Godot 4.7（GDScript）**，服务端 **Go 1.22 + SQLite**，  
 自定义 WebSocket 二进制协议（主码/子码分层，单源登记 + 双端生成）。
 
-当前版本 **0.10.1-beta**，完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **0.11.0-beta**，完整更新记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 已实现
 

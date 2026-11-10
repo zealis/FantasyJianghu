@@ -81,6 +81,8 @@ func (s *Service) playerUnit(ctx context.Context, charID int64) (*Unit, error) {
 	}
 	u := &Unit{ID: c.ID, Name: c.Name, Side: 0, Level: c.Level, Faction: c.Faction,
 		BaseStats: st, Stats: st, HP: st.HP, MP: st.MP, Skills: s.skillsForLevel(c.Faction, c.Level), Alive: true}
+	// 感电施加权来自心法（惊雷宝典），不是全局开关，也不按门派名硬编码。
+	u.ShockOnHit = CollectPassives(s.cfg.Battle.Skills, c.Faction, c.Level).ShockOnHit
 	return u, nil
 }
 

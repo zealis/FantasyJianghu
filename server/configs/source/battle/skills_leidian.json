@@ -13,9 +13,10 @@
           {
             "name": "感电",
             "implemented": true,
-            "note": "已实现（引擎级）：applyShock 法术命中叠 1 层（上限 3），每层受雷法伤害 +4%；尚未按门派限定"
+            "note": "已实现且按门派限定：仅持有《惊雷宝典》心法的施法者，法术命中才叠层（上限 3，每层受雷法 +4%）；《雷甲护身》受击反叠未实现"
           }
-        ]
+        ],
+        "shock_on_hit": true
       }
     },
     {
@@ -132,7 +133,8 @@
         "stat": "mdef_pct",
         "value": 1500,
         "turns": 3
-      }
+      },
+      "special": "shock_back_20"
     },
     {
       "id": "jilei_bu",

@@ -22,6 +22,9 @@ type PassiveBonus struct {
 	PDodgePct  int // 闪避
 	CritDmgPct int // 暴击伤害
 
+	// ShockOnHit 表示持有《惊雷宝典》心法：法术命中可施加感电（惊雷殿专属）。
+	ShockOnHit bool
+
 	// 金刚印（金刚不坏体）：受击叠层，每层反伤 +ReflectPerStack，最多 ReflectMaxStacks 层。
 	ReflectPerStack  int
 	ReflectMaxStacks int
@@ -48,6 +51,9 @@ func CollectPassives(skills []config.SkillDef, faction string, level int) Passiv
 		out.SealHitPct += p.SealHitPct
 		out.PDodgePct += p.PDodgePct
 		out.CritDmgPct += p.CritDmgPct
+		if p.ShockOnHit {
+			out.ShockOnHit = true
+		}
 		// 多层反伤被动取最强一档（当前只有金刚不坏体一本，留出扩展余地）。
 		if p.ReflectPerStack > out.ReflectPerStack {
 			out.ReflectPerStack = p.ReflectPerStack

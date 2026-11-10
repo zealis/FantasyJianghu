@@ -167,3 +167,26 @@ func TestHeartSkillIsLevelOneForEveryFaction(t *testing.T) {
 		}
 	}
 }
+
+// TestShockOnHitComesFromLeidianHeart 感电施加权来自《惊雷宝典》心法（秘籍表 V1.2 §4 注），
+// 只有惊雷殿角色带这个标记；其他门派即使会法术也不施加。
+func TestShockOnHitComesFromLeidianHeart(t *testing.T) {
+	cfg := realConfig(t)
+	for _, f := range cfg.Factions {
+		got := CollectPassives(cfg.Battle.Skills, f.Name, 80).ShockOnHit
+		want := f.Name == "惊雷殿"
+		if got != want {
+			t.Fatalf("%s ShockOnHit=%v，期望 %v（仅惊雷殿持惊雷宝典）", f.Name, got, want)
+		}
+	}
+	// 配置层：只有惊雷宝典声明 shock_on_hit。
+	declared := map[string]bool{}
+	for _, sk := range cfg.Battle.Skills {
+		if sk.Passive != nil && sk.Passive.ShockOnHit {
+			declared[sk.Faction] = true
+		}
+	}
+	if len(declared) != 1 || !declared["惊雷殿"] {
+		t.Fatalf("shock_on_hit 只应由惊雷殿《惊雷宝典》声明，实际 %v", declared)
+	}
+}
