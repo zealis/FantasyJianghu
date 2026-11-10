@@ -351,8 +351,20 @@ func actorID(u *Unit) int64 {
 	return u.ID
 }
 
+// reflectRate 反伤系数合计（万分制）：单位自身给定值（怪物/法宝/金刚印层数）
+// + 角色级反伤系数（数值规范 §9.7 管线第 ④⑤ 步已累加并裁剪）。
+func (b *Battle) reflectRate(u *Unit) int {
+	if u == nil {
+		return 0
+	}
+	return u.ReflectPct + effectiveStats(u).Reflect
+}
+
 // applyDamage 统一扣血、战报、死亡与反伤。
-// 反伤按配置比例直接结算，不触发连击/暴击二次判定（数值规范 §2.4）。
+// 反伤口径（数值规范 §2.4 + §9.7）：
+//   - 在 defender **实际掉血量确定后**触发，反伤 = 实际伤害 × 反伤系数；
+//   - 独立战报事件（reflect）作用于攻击者，不触发暴击/连击二次判定、不触发吸血、不再递归反伤；
+//   - 可致死；defender 本击阵亡也照常结算（同归于尽合法）。
 func (b *Battle) applyDamage(evs []Event, actor, target *Unit, dmg int, flags map[string]any) []Event {
 	if dmg <= 0 || target == nil || !target.Alive {
 		return evs
@@ -362,15 +374,17 @@ func (b *Battle) applyDamage(evs []Event, actor, target *Unit, dmg int, flags ma
 	if target.HP <= 0 {
 		target.HP = 0
 		target.Alive = false
-		return b.emit(evs, Event{Type: "death", Target: target.ID})
+		evs = b.emit(evs, Event{Type: "death", Target: target.ID})
 	}
-	if target.ReflectPct > 0 && actor != nil && actor.Alive {
-		rd := int(math.Floor(float64(dmg) * float64(target.ReflectPct) / 10000.0))
+	// 反伤放在死亡事件之后结算：先确认 defender 掉了多少血，再回弹给攻击者。
+	if rate := b.reflectRate(target); rate > 0 && actor != nil && actor.Alive {
+		rd := int(math.Floor(float64(dmg) * float64(rate) / 10000.0))
 		if rd < b.F.Effects.Reflect.MinDamage {
 			rd = b.F.Effects.Reflect.MinDamage
 		}
 		actor.HP -= rd
-		evs = b.emit(evs, Event{Type: "reflect", Actor: target.ID, Target: actor.ID, Value: rd})
+		evs = b.emit(evs, Event{Type: "reflect", Actor: target.ID, Target: actor.ID, Value: rd,
+			Flags: map[string]any{"rate": rate}})
 		if actor.HP <= 0 {
 			actor.HP = 0
 			actor.Alive = false
@@ -378,6 +392,43 @@ func (b *Battle) applyDamage(evs []Event, actor, target *Unit, dmg int, flags ma
 		}
 	}
 	return evs
+}
+
+// maxHP 取当前生命上限（Buff 不改上限，取 BaseStats.HP）。
+func maxHP(u *Unit) int { return u.BaseStats.HP }
+
+// applyHeal 治疗结算钩子（数值规范 §9.7）：
+// 最终治疗 = 基础治疗 × (1 + **施术者**治疗加成)，随后再乘长局衰减乘子（顺序不得颠倒）。
+// 溢出治疗截断至生命上限。治疗秘籍（玄水宫）尚未入配置包，本钩子先就位，
+// 秘籍表 V1.1 的玄水治疗技能落地时直接调用即可，系数无需再改。
+func (b *Battle) applyHeal(evs []Event, healer, target *Unit, base int, flags map[string]any) []Event {
+	if base <= 0 || target == nil || !target.Alive {
+		return evs
+	}
+	bonus := 0
+	if healer != nil {
+		bonus = effectiveStats(healer).HealBonus
+	}
+	amount := int(math.Floor(float64(base) * (1 + float64(bonus)/10000.0)))
+	// 衰减在加成之后：先放大治疗，再乘回合衰减（文档 §9.7 明确顺序）。
+	amount = int(math.Floor(float64(amount) * b.decayHeal(b.Turn)))
+	if amount < 1 {
+		amount = 1
+	}
+	before := target.HP
+	if hp := before + amount; hp > maxHP(target) {
+		target.HP = maxHP(target)
+	} else {
+		target.HP = hp
+	}
+	healed := target.HP - before
+	f := flags
+	if f == nil {
+		f = map[string]any{}
+	}
+	f["bonus"] = bonus
+	f["overheal"] = amount - healed
+	return b.emit(evs, Event{Type: "heal", Actor: actorID(healer), Target: target.ID, Value: healed, Flags: f})
 }
 
 // applyShock 法术命中叠感电并刷新 DOT 快照（DOT 按施加者法攻在施加时定格，保证可重演）。
@@ -453,11 +504,17 @@ func (b *Battle) executeSkill(actor *Unit, targets []*Unit, skill config.SkillDe
 		evs = b.emit(evs, Event{Type: "flag", Actor: actor.ID,
 			Flags: map[string]any{"special_deferred": skill.Special}})
 	}
+	// 蓄力伤害钩子（数值规范 §9.7）：消耗星辉的攻击秘籍，该次伤害 × (1 + 蓄力伤害系数)。
+	// 系数取施法者角色级属性（品质共鸣微调/心法/法宝在管线内已累加）。
+	chargeMult := 1.0
+	if skill.ConsumesStar && skill.AttackType != "" {
+		chargeMult += float64(effectiveStats(actor).ChargeDmg) / 10000.0
+	}
 	for _, tgt := range targets {
 		if !tgt.Alive {
 			continue
 		}
-		mult := 1.0
+		mult := chargeMult
 		if skill.Special == "shock_bonus_10" && tgt.ShockStacks > 0 {
 			mult += float64(b.F.Effects.Shock.BonusVsShockedPct) / 10000.0
 		}

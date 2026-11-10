@@ -122,6 +122,8 @@ func (s *Service) HandleView(ctx context.Context, sess *session.Session, _ map[s
 		"hit": st.PHit, "dodge": st.PDodge,
 		"crit": st.PCrit, "combo": st.PCombo, "resist": st.SealRes,
 		"sealhit": st.SealHit, "mcrit": st.MCrit,
+		// 角色级系数（数值规范 §9.7，万分制）：反伤 / 治疗加成 / 蓄力伤害。
+		"reflect": st.Reflect, "heal_bonus": st.HealBonus, "charge_dmg": st.ChargeDmg,
 	}
 	return map[string]any{
 		"slots": slots,

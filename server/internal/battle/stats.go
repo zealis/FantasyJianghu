@@ -23,6 +23,12 @@ type UnitStats struct {
 	PCombo           int // 万分制
 	SealHit, SealRes int // 万分制
 	Flee             int // 万分制
+
+	// 角色级系数（数值规范 §9.7，万分制）：由心法被动、品质共鸣微调、法宝、Buff 在第 ④ 步
+	// 按百分点累加，第 ⑤ 步按 Formula.CoeffCaps 裁剪。此前引擎无这三项，套装三项微调只能登记不生效。
+	Reflect   int // 反伤系数：受击按实际伤害回弹给攻击者
+	HealBonus int // 治疗加成：最终治疗 = 基础 × (1 + 本系数)
+	ChargeDmg int // 蓄力伤害：消耗星辉的攻击秘籍伤害 × (1 + 本系数)
 }
 
 // DerivedStats 按门派定位与等级派生二级属性（M2a 首版）：
@@ -267,13 +273,14 @@ func LoadFinalStats(ctx context.Context, char *store.Character, equips *store.Eq
 		quals = append(quals, cfg.Items.ItemQuality(itemID))
 	}
 	out.Suit = cfg.Suit.SuitResonance(quals, char.Faction, cfg.CategoryOf(char.Faction))
-	out.Stats = applyEquipAndSuit(base, sum, out.Suit.Percent)
+	out.Stats = applyEquipAndSuit(base, sum, out.Suit.Percent, cfg.Battle.Formula.CoeffCaps)
 	return out, nil
 }
 
 // applyEquipAndSuit 先累加装备的数值型属性，再按百分比应用共鸣加成。
 // 数值型按百分比乘算（不降低原值），概率型（万分制）按百分点相加（数值规范 §1.2）。
-func applyEquipAndSuit(st UnitStats, equip map[string]int, pct map[string]float64) UnitStats {
+// §1.3 管线第 ④ 步（百分比加成）结束后，第 ⑤ 步对角色级系数按 caps 裁剪（§9.7）。
+func applyEquipAndSuit(st UnitStats, equip map[string]int, pct map[string]float64, caps config.CoeffCaps) UnitStats {
 	st.HP += equip["hp"]
 	st.MP += equip["mp"]
 	st.PAtk += equip["patk"]
@@ -305,5 +312,19 @@ func applyEquipAndSuit(st UnitStats, equip map[string]int, pct map[string]float6
 	st.PCombo = rate(st.PCombo, "pcombo")
 	st.SealHit = rate(st.SealHit, "sealhit")
 	st.PDodge = rate(st.PDodge, "pdodge")
+	// 角色级系数：百分点 → 万分制，再按上限裁剪（§9.7）。
+	st.Reflect = rate(st.Reflect, "reflect")
+	st.HealBonus = rate(st.HealBonus, "heal_bonus")
+	st.ChargeDmg = rate(st.ChargeDmg, "charge_dmg")
+	st.Reflect = clampRate(st.Reflect, caps.ReflectPct)
+	st.HealBonus = clampRate(st.HealBonus, caps.HealBonusPct)
 	return st
+}
+
+// clampRate 第 ⑤ 步单项上限裁剪；cap<=0 表示该项不设上限。
+func clampRate(v, cap int) int {
+	if cap > 0 && v > cap {
+		return cap
+	}
+	return v
 }

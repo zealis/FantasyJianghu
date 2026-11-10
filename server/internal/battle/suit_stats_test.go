@@ -14,7 +14,7 @@ func TestApplyEquipAndSuitOrder(t *testing.T) {
 	pct := map[string]float64{
 		"hp": 5, "mp": 5, "patk": 5, "matk": 5, "pdef": 5, "mdef": 5, "speed": 5, // 一档全属性 +5%
 	}
-	got := applyEquipAndSuit(st, equip, pct)
+	got := applyEquipAndSuit(st, equip, pct, config.CoeffCaps{})
 	// HP:(1000+200)*1.05 = 1260；物攻:(100+40)*1.05 = 147
 	if got.HP != 1260 {
 		t.Fatalf("HP 应为 (1000+200)*1.05=1260，实际 %d", got.HP)
@@ -32,7 +32,7 @@ func TestApplySuitRateAttrs(t *testing.T) {
 	st := UnitStats{PCrit: 500, MCrit: 500, PCombo: 0, SealHit: 0, PDodge: 0}
 	got := applyEquipAndSuit(st, nil, map[string]float64{
 		"pcrit": 6.5, "mcrit": 6.5, "pcombo": 3, "sealhit": 10, "pdodge": 3,
-	})
+	}, config.CoeffCaps{})
 	if got.PCrit != 1150 || got.MCrit != 1150 {
 		t.Fatalf("暴击/法暴应为 500+650=1150 万分制，实际 %d/%d", got.PCrit, got.MCrit)
 	}
@@ -44,7 +44,7 @@ func TestApplySuitRateAttrs(t *testing.T) {
 // TestApplySuitNeverLowersStats 防御性：百分比为 0 或负时不降低属性。
 func TestApplySuitNeverLowersStats(t *testing.T) {
 	st := UnitStats{HP: 100, PAtk: 10}
-	got := applyEquipAndSuit(st, nil, map[string]float64{"hp": 0, "patk": 0})
+	got := applyEquipAndSuit(st, nil, map[string]float64{"hp": 0, "patk": 0}, config.CoeffCaps{})
 	if got.HP != 100 || got.PAtk != 10 {
 		t.Fatalf("零加成不应改变属性: %+v", got)
 	}
@@ -65,12 +65,34 @@ func TestSuitResonanceDrivesStats(t *testing.T) {
 	if res.Percent["sealhit"] != 10 {
 		t.Fatalf("符观完美档封印命中应为 10%%，实际 %v", res.Percent["sealhit"])
 	}
-	st := applyEquipAndSuit(UnitStats{Speed: 200}, nil, res.Percent)
+	st := applyEquipAndSuit(UnitStats{Speed: 200}, nil, res.Percent, config.CoeffCaps{})
 	if st.SealHit != 1000 {
 		t.Fatalf("封印命中应折算为 1000 万分制，实际 %d", st.SealHit)
 	}
 	// 二档取代一档：速度只吃主项 9% → 200*1.09 = 218（不再叠全属性 5%）。
 	if st.Speed != 218 {
 		t.Fatalf("速度应为 200*1.09=218，实际 %d", st.Speed)
+	}
+}
+
+// TestCoeffCapsApplied 数值规范 §9.7：第 ⑤ 步按 formula.coeff_caps 裁剪反伤/治疗加成。
+func TestCoeffCapsApplied(t *testing.T) {
+	caps := config.CoeffCaps{ReflectPct: 5000, HealBonusPct: 6000}
+	st := applyEquipAndSuit(UnitStats{}, nil, map[string]float64{
+		"reflect": 80, "heal_bonus": 80, "charge_dmg": 30,
+	}, caps)
+	if st.Reflect != 5000 {
+		t.Fatalf("反伤应裁到 50%%（5000 万分制），实际 %d", st.Reflect)
+	}
+	if st.HealBonus != 6000 {
+		t.Fatalf("治疗加成应裁到 60%%（6000 万分制），实际 %d", st.HealBonus)
+	}
+	if st.ChargeDmg != 3000 {
+		t.Fatalf("蓄力伤害无上限裁剪，应为 30%%（3000），实际 %d", st.ChargeDmg)
+	}
+	// 上限内不裁剪。
+	st2 := applyEquipAndSuit(UnitStats{}, nil, map[string]float64{"reflect": 3}, caps)
+	if st2.Reflect != 300 {
+		t.Fatalf("3%% 应原样为 300，实际 %d", st2.Reflect)
 	}
 }

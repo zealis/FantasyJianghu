@@ -5,25 +5,61 @@
     "float_high": 1.05,
     "min_damage": 1,
     "level_diff_per_level": 0.015,
-    "level_diff_clamp": 0.30,
+    "level_diff_clamp": 0.3,
     "armor_break_per_stack": 0.03,
     "armor_break_max_stacks": 5
   },
-  "crit": {"base_rate": 0.05, "damage": 1.50, "duanyue_bonus": 0.10},
-  "combo": {"extra_mult": 0.50},
+  "coeff_caps": {
+    "reflect_cap_pct": 5000,
+    "heal_bonus_cap_pct": 6000
+  },
+  "crit": {
+    "base_rate": 0.05,
+    "damage": 1.5,
+    "duanyue_bonus": 0.1
+  },
+  "combo": {
+    "extra_mult": 0.5
+  },
   "multiplier_cap": 2.25,
-  "hit": {"physical_base": 0.95, "clamp_low": 0.60, "clamp_high": 1.00, "magic_dodge_base": 0.10},
+  "hit": {
+    "physical_base": 0.95,
+    "clamp_low": 0.6,
+    "clamp_high": 1.0,
+    "magic_dodge_base": 0.1
+  },
   "control": {
-    "seal_res_base": 0.10,
-    "combo_decay": 0.70,
+    "seal_res_base": 0.1,
+    "combo_decay": 0.7,
     "immune_turns": 1,
     "hard_max_turns": 2,
-    "hard_types": ["麻痹", "定身", "沉睡", "冰冻", "混乱"]
+    "hard_types": [
+      "麻痹",
+      "定身",
+      "沉睡",
+      "冰冻",
+      "混乱"
+    ]
   },
   "decay": [
-    {"from": 1, "to": 20, "dmg": 1.0, "heal": 1.0},
-    {"from": 21, "to": 30, "dmg_step": 0.05, "heal_step": -0.03},
-    {"from": 31, "dmg_step": 0.10, "heal_step": -0.05, "heal_floor": 0.20}
+    {
+      "from": 1,
+      "to": 20,
+      "dmg": 1.0,
+      "heal": 1.0
+    },
+    {
+      "from": 21,
+      "to": 30,
+      "dmg_step": 0.05,
+      "heal_step": -0.03
+    },
+    {
+      "from": 31,
+      "dmg_step": 0.1,
+      "heal_step": -0.05,
+      "heal_floor": 0.2
+    }
   ],
   "speed_jitter": 0.03,
   "max_turns": 50,
@@ -41,12 +77,19 @@
       "max_pct": 1500,
       "min_damage": 1
     },
-    "dot": {"min_damage": 1}
+    "dot": {
+      "min_damage": 1
+    }
   },
   "drill": {
     "level": 20,
     "allies": 3,
-    "enemies": ["muzhuang", "yelinang", "shanzei", "jingji_wushi"],
+    "enemies": [
+      "muzhuang",
+      "yelinang",
+      "shanzei",
+      "jingji_wushi"
+    ],
     "ally_hp_pct": 8000,
     "ally_atk_pct": 8000,
     "ally_speed_pct": 9000,
@@ -55,5 +98,8 @@
     "enemy_def_pct_of_player": 5000,
     "enemy_speed_pct_of_player": 9000
   },
-  "specials_deferred": ["shock_jump_50", "shock_detonate_25"]
+  "specials_deferred": [
+    "shock_jump_50",
+    "shock_detonate_25"
+  ]
 }

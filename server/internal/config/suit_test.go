@@ -91,21 +91,30 @@ func TestSuitZhimengDodgeOnly(t *testing.T) {
 
 func TestSuitPendingTweaksNotApplied(t *testing.T) {
 	d := realSuit(t)
-	// 星宫蓄力伤害、禅院反伤、玄水治疗加成引擎未接入，不写进 Percent（不伪造生效）。
+	// 星宫蓄力伤害、玄水治疗加成：上游机制（星辉 / 治疗秘籍）未落地，不写进 Percent（不伪造生效）。
 	for _, c := range []struct{ faction, attr string }{
-		{"璇玑星宫", "charge_dmg"}, {"金刚禅院", "reflect"}, {"玄水宫", "heal_bonus"},
+		{"璇玑星宫", "charge_dmg"}, {"玄水宫", "heal_bonus"},
 	} {
 		cat := "法术"
-		if c.faction == "金刚禅院" || c.faction == "玄水宫" {
+		if c.faction == "玄水宫" {
 			cat = "肉盾"
 		}
 		r := d.SuitResonance([]string{"完美", "完美", "完美", "完美", "完美"}, c.faction, cat)
 		if _, has := r.Percent[c.attr]; has {
-			t.Fatalf("%s 的 %s 未接入，不应出现在加成里", c.faction, c.attr)
+			t.Fatalf("%s 的 %s 上游未落地，不应出现在加成里", c.faction, c.attr)
 		}
 		if r.TweakPct != 0 {
-			t.Fatalf("%s 未接入的微调幅度应为 0，实际 %v", c.faction, r.TweakPct)
+			t.Fatalf("%s 未生效的微调幅度应为 0，实际 %v", c.faction, r.TweakPct)
 		}
+	}
+}
+
+// TestSuitReflectTweakApplied 禅院反伤已按 §9.7 接线：完美档应写进 Percent 且为 3%。
+func TestSuitReflectTweakApplied(t *testing.T) {
+	d := realSuit(t)
+	r := d.SuitResonance([]string{"完美", "完美", "完美", "完美", "完美"}, "金刚禅院", "肉盾")
+	if !approx(r.Percent["reflect"], 3) || !approx(r.TweakPct, 3) {
+		t.Fatalf("禅院反伤应生效 3%%: percent=%v tweak=%v", r.Percent["reflect"], r.TweakPct)
 	}
 }
 
@@ -165,12 +174,25 @@ func TestValidateSuitRejectsMissingFaction(t *testing.T) {
 
 func TestValidateSuitRejectsPendingMarkedImplemented(t *testing.T) {
 	d := realSuit(t)
+	// 玄水治疗加成：上游治疗秘籍未落地，标 implemented=true 仍须拒绝。
+	tw := d.FactionTweaks["玄水宫"]
+	yes := true
+	tw.Implemented = &yes
+	d.FactionTweaks["玄水宫"] = tw
+	if err := validateSuit(d, eightFactions()); err == nil {
+		t.Fatal("上游未落地的属性标 implemented=true 应被拒绝")
+	}
+}
+
+// TestValidateSuitAcceptsReflectImplemented §9.7 接线后，禅院反伤允许 implemented=true。
+func TestValidateSuitAcceptsReflectImplemented(t *testing.T) {
+	d := realSuit(t)
 	tw := d.FactionTweaks["金刚禅院"]
 	yes := true
 	tw.Implemented = &yes
 	d.FactionTweaks["金刚禅院"] = tw
-	if err := validateSuit(d, eightFactions()); err == nil {
-		t.Fatal("引擎未接入的属性标 implemented=true 应被拒绝")
+	if err := validateSuit(d, eightFactions()); err != nil {
+		t.Fatalf("已接线的反伤应放行: %v", err)
 	}
 }
 

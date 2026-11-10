@@ -96,10 +96,18 @@ type DrillParams struct {
 	EnemySpeedPctOfPlayer int      `json:"enemy_speed_pct_of_player"`
 }
 
+// CoeffCaps 为角色级系数上限（数值规范 §9.7：反伤 ≤50%、治疗加成 ≤60%，入配置可调）。
+// 万分制整数；0 表示该项不裁剪。
+type CoeffCaps struct {
+	ReflectPct   int `json:"reflect_cap_pct"`
+	HealBonusPct int `json:"heal_bonus_cap_pct"`
+}
+
 type BattleFormula struct {
-	Damage DamageParams `json:"damage"`
-	Crit   CritParams   `json:"crit"`
-	Combo  struct {
+	Damage    DamageParams `json:"damage"`
+	CoeffCaps CoeffCaps    `json:"coeff_caps"`
+	Crit      CritParams   `json:"crit"`
+	Combo     struct {
 		ExtraMult float64 `json:"extra_mult"`
 	} `json:"combo"`
 	MultiplierCap     float64       `json:"multiplier_cap"`
@@ -176,6 +184,9 @@ type SkillDef struct {
 		MAtkPct int `json:"matk_pct"` // 万分制
 	} `json:"passive"`
 	Special string `json:"special"` // 特效标记；须匹配 Formula.SpecialsDeferred 或已实现集合
+	// ConsumesStar 标记「释放时消耗星辉」的攻击秘籍：该类秘籍伤害吃角色级蓄力伤害系数
+	// （数值规范 §9.7 蓄力钩子）。不消耗星辉的秘籍不适用。
+	ConsumesStar bool `json:"consumes_star"`
 }
 
 // MonsterDef 为野怪模板（M2a 首版手写数值，登记助手定案）。
@@ -274,6 +285,14 @@ func validateBattle(b BattleData) error {
 	}
 	if e.Dot.MinDamage <= 0 {
 		return fmt.Errorf("DOT 伤害下限必须为正")
+	}
+	// 角色级系数上限（§9.7）：万分制、0≤x≤100%，首版反伤 ≤50%、治疗 ≤60%。
+	caps := b.Formula.CoeffCaps
+	if caps.ReflectPct < 0 || caps.ReflectPct > 10000 {
+		return fmt.Errorf("反伤系数上限 %d 非法（万分制 0..10000）", caps.ReflectPct)
+	}
+	if caps.HealBonusPct < 0 || caps.HealBonusPct > 10000 {
+		return fmt.Errorf("治疗加成上限 %d 非法（万分制 0..10000）", caps.HealBonusPct)
 	}
 	d := b.Formula.Drill
 	if d.Level <= 0 || d.Allies < 0 || d.Allies > 3 || len(d.Enemies) == 0 || len(d.Enemies) > 4 {

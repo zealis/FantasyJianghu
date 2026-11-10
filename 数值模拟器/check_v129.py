@@ -6,9 +6,11 @@
   2. 完美档同属性合计（剑宗暴击 6.5% / 雷殿法暴 6.5% / 符观封印命中 10%），与配置表 §4 一致；
   3. 《宗派战胜场加成表》V1.0 —— 10/30/60/100 胜分档、只取最高档不叠加、封顶 +4% 不超过称号四档 +5%；
   4. 符观封印命中 +10% 的重点校准：按 formula.control 算实际封印成功率，给出「是否需要微调降档」的结论；
-  5. 乘区上限（×2.25）与「微调不得顶掉系别副项」的结构性检查。
+  5. 乘区上限（×2.25）与「微调不得顶掉系别副项」的结构性检查；
+  6. 数值规范 §9.7 角色级系数口径：反伤/治疗加成上限（50%/60%）、禅院反伤放行、
+     玄水治疗与星宫蓄力在上游机制落地前必须保持 implemented=false（不伪造生效）。
 
-用法：python check_v129.py [配置包版本，默认 1.9.0]
+用法：python check_v129.py [配置包版本，默认 1.10.0]
 产出：report_v129_<version>.json
 """
 import json
@@ -17,7 +19,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-VERSION = sys.argv[1] if len(sys.argv) > 1 else "1.9.0"
+VERSION = sys.argv[1] if len(sys.argv) > 1 else "1.10.0"
 BUILD = os.path.join(ROOT, "server", "configs", "build", VERSION)
 OUT = os.path.join(HERE, "report_v129_" + VERSION + ".json")
 
@@ -180,6 +182,36 @@ def check_seal_calibration(suit, formula):
     return rows, ("PASS" if ok else "NEEDS_TUNE")
 
 
+# ---- 数值规范 §9.7：角色级系数（反伤 / 治疗加成 / 蓄力伤害） ----
+DOC_COEFF_CAPS = {"reflect_cap_pct": 5000, "heal_bonus_cap_pct": 6000}
+
+
+def check_coeffs(formula, suit):
+    caps = formula.get("coeff_caps", {})
+    for key, want in DOC_COEFF_CAPS.items():
+        got = caps.get(key)
+        check("角色级系数上限 %s 与文档一致（%s）" % (key, int(want / 100)),
+              got == want, "%s=%s" % (key, got))
+    check("系数上限为万分制且不超过 100%",
+          all(0 <= int(v) <= 10000 for v in caps.values() if isinstance(v, (int, float))),
+          str(caps))
+    # 禅院反伤已接线 → 允许 implemented=true；玄水治疗、星宫蓄力上游未落地 → 必须 false。
+    tweaks = suit.get("faction_tweaks", {})
+    reflect = tweaks.get("金刚禅院", {})
+    check("禅院反伤已接线并放行（implemented=true）",
+          reflect.get("attr") == "reflect" and reflect.get("implemented") is True,
+          "implemented=%s" % reflect.get("implemented"))
+    for faction, attr, why in [("玄水宫", "heal_bonus", "治疗秘籍未入包"),
+                               ("璇玑星宫", "charge_dmg", "星辉机制未实现")]:
+        tw = tweaks.get(faction, {})
+        check("%s 的 %s 仍标未生效（%s）" % (faction, attr, why),
+              tw.get("attr") == attr and tw.get("implemented") is False,
+              "implemented=%s" % tw.get("implemented"))
+    # 反伤 3% 远低于 50% 上限，不构成反弹构筑风险。
+    pct = (reflect.get("pct") or [0])[-1]
+    check("禅院反伤完美档 3% 未触碰 50% 上限", pct * 100 <= caps.get("reflect_cap_pct", 0),
+          "反伤 %.1f%% / 上限 %.0f%%" % (pct, caps.get("reflect_cap_pct", 0) / 100))
+
 FACTION_CATEGORY = {
     "断岳剑宗": "物理", "破军枪府": "物理",
     "惊雷殿": "法术", "璇玑星宫": "法术",
@@ -198,6 +230,7 @@ def main():
 
     combines = check_suit(suit)
     check_sect_war(sw)
+    check_coeffs(formula, suit)
     seal_rows, seal_verdict = check_seal_calibration(suit, formula)
 
     failed = [r for r in results if not r["ok"]]

@@ -19,10 +19,19 @@ var suitRateAttrs = map[string]bool{
 	"pdodge": true, "mcrit": true, "pcrit": true, "pcombo": true, "sealhit": true,
 }
 
-// 战斗引擎暂无角色级系数的三项：蓄力秘籍伤害、反伤率、治疗加成。
-// 配置里照表登记，但必须标 implemented=false，不许假装生效（不伪造数值）。
+// 引擎已接线的角色级系数（数值规范 §9.7）：反伤 / 治疗加成 / 蓄力伤害。
+// 三项在属性管线第 ④ 步按百分点累加、第 ⑤ 步按 formula.coeff_caps 裁剪，
+// 引擎侧钩子分别为 applyDamage（反伤）、applyHeal（治疗）、executeSkill（蓄力）。
+var suitCoeffAttrs = map[string]bool{
+	"reflect": true, "heal_bonus": true, "charge_dmg": true,
+}
+
+// 系数已入属性字典、钩子已就位，但**上游机制**仍未落地的两项：
+//   - heal_bonus：秘籍表 V1.1 的玄水治疗技能尚未入配置包，引擎里没有任何治疗来源；
+//   - charge_dmg：星辉（璇玑星经心法层数）机制未实现，没有「消耗星辉」的秘籍可触发。
+// 标 implemented=true 会让面板显示一个永远不生效的加成，故仍禁止（不伪造生效）。
 var suitPendingAttrs = map[string]bool{
-	"charge_dmg": true, "reflect": true, "heal_bonus": true,
+	"heal_bonus": true, "charge_dmg": true,
 }
 
 // SuitSystem 为一个系别的主项/副项定义（物理/法术/封印/肉盾）。
@@ -205,9 +214,10 @@ func validateSuit(d SuitData, factions []FactionInfo) error {
 		implemented := tw.ImplementedAttr()
 		if suitPendingAttrs[tw.Attr] {
 			if implemented {
-				return fmt.Errorf("suit.faction_tweaks[%s] 的 %q 引擎尚未接入，必须标 implemented=false", f.Name, tw.Attr)
+				return fmt.Errorf("suit.faction_tweaks[%s] 的 %q 上游机制（治疗秘籍/星辉）未落地，"+
+					"必须标 implemented=false（数值规范 §9.7 放行条件）", f.Name, tw.Attr)
 			}
-		} else if !suitRateAttrs[tw.Attr] && !suitNumericAttrs[tw.Attr] {
+		} else if !suitRateAttrs[tw.Attr] && !suitNumericAttrs[tw.Attr] && !suitCoeffAttrs[tw.Attr] {
 			return fmt.Errorf("suit.faction_tweaks[%s].attr 非法: %q", f.Name, tw.Attr)
 		}
 		for i := 0; i < 5; i++ {

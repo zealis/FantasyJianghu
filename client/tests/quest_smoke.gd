@@ -189,6 +189,15 @@ func _run() -> void:
 	if not res_text.contains("暴击 +6.5%"):
 		_fail("暴击应合并为 6.5%%（副项 3.5 + 微调 3）: %s" % res_text)
 		return
+	# 角色级系数（数值规范 §9.7）也要有中文名，不能把原始 key 直接铺到面板上。
+	EquipStore.suit = {"tier": 2, "quality": "完美", "count": 5, "all_pct": 0.0,
+		"main_attrs": ["pdef", "mdef"], "main_pct": 9.0, "sub_attr": "hp", "sub_pct": 9.0,
+		"tweak_attr": "reflect", "tweak_pct": 3.0}
+	_layer._refresh_resonance()
+	await get_tree().process_frame
+	if not _layer._resonance_label.text.contains("反伤 +3%"):
+		_fail("反伤系数应显示为「反伤 +3%%」: %s" % _layer._resonance_label.text)
+		return
 	# 未拿到服务端数据时不能误报「未激活」（穿满了却显示没共鸣会误导）。
 	EquipStore.suit = {}
 	_layer._refresh_resonance()

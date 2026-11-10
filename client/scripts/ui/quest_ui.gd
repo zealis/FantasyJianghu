@@ -67,6 +67,8 @@ const SUIT_ATTR_NAME := {
 	"pdef": "物防", "mdef": "法防", "speed": "速度",
 	"pcrit": "暴击", "mcrit": "法暴", "pcombo": "连击",
 	"sealhit": "封印命中", "pdodge": "闪避",
+	# 角色级系数（数值规范 §9.7）：反伤/治疗加成/蓄力伤害
+	"reflect": "反伤", "heal_bonus": "治疗加成", "charge_dmg": "蓄力伤",
 }
 
 var _theme: Theme = preload("res://resources/theme_paper.tres")
