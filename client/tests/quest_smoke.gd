@@ -181,6 +181,34 @@ func _run() -> void:
 	if not bag_texts.contains("售价    5 金币"):
 		_fail("详情卡缺出售价: %s" % bag_texts)
 		return
+	# 出售数量选择器：默认 1 → 加到该格上限 3 时 ＋/全部 置灰 → 回 1 时 － 置灰。
+	if not bag_texts.contains("出售数量"):
+		_fail("详情卡缺出售数量选择器: %s" % bag_texts)
+		return
+	if _layer._sell_qty != 1:
+		_fail("出售数量默认应为 1，实际 %d" % _layer._sell_qty)
+		return
+	_layer._set_sell_qty(2)
+	await get_tree().process_frame
+	if _layer._sell_qty != 2 or _layer._sell_qty_label.text != "2":
+		_fail("数量加到 2 未生效")
+		return
+	if _layer._sell_gain_label.text != "可得 10 金币":
+		_fail("可得金币未随数量更新: %s" % _layer._sell_gain_label.text)
+		return
+	_layer._set_sell_qty(99)
+	await get_tree().process_frame
+	if _layer._sell_qty != 3:
+		_fail("数量应被该格数量 3 截断，实际 %d" % _layer._sell_qty)
+		return
+	if not _layer._sell_plus.disabled or not _layer._sell_all.disabled:
+		_fail("到达上限后 ＋/全部 应置灰")
+		return
+	_layer._set_sell_qty(1)
+	await get_tree().process_frame
+	if _layer._sell_qty != 1 or not _layer._sell_minus.disabled:
+		_fail("回到 1 时 － 应禁用")
+		return
 	# 锁定态：格角标 + 详情提示。
 	QuestStore.bag["items"][0]["locked"] = true
 	_layer._refresh_bag()

@@ -63,6 +63,15 @@ var _selected_item := ""
 var _bag_ops: Dictionary = {}
 var _item_icons: Dictionary = {}
 
+# 出售数量选择器（用户定案：定稿没有数量选择，但单卖 1 个不够用）。
+var _sell_qty: int = 1
+var _sell_qty_for: String = ""
+var _sell_qty_label: Label
+var _sell_gain_label: Label
+var _sell_minus: Button
+var _sell_plus: Button
+var _sell_all: Button
+
 var _toast: Label
 var _toast_timer: float = 0.0
 
@@ -538,7 +547,7 @@ func _build_bag_left() -> Control:
 	for i in range(1, 5):
 		var b := _button("仓库%d" % i, false, true)
 		b.custom_minimum_size = Vector2(72, 30)
-		b.tooltip_text = "仓库系统未开放（M2c）"
+		b.tooltip_text = "仓库需消耗金元宝解锁（后续版本开放）"
 		tabs.add_child(b)
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(0, 92)
@@ -832,6 +841,12 @@ func _bag_cell(info: Dictionary) -> Control:
 func _refresh_detail() -> void:
 	for c in _bag_detail.get_children():
 		c.queue_free()
+	# 详情卡每次重建，旧控件引用必须清空，避免 _set_sell_qty 操作已释放节点。
+	_sell_qty_label = null
+	_sell_gain_label = null
+	_sell_minus = null
+	_sell_plus = null
+	_sell_all = null
 	var info: Dictionary = {}
 	for it in QuestStore.bag.get("items", []):
 		if str(it.get("id", "")) == _selected_item:
@@ -870,6 +885,14 @@ func _refresh_detail() -> void:
 	if info.has("sell"):
 		var sell := int(info.get("sell", 0))
 		_bag_detail.add_child(_label("售价    %s" % (("%d 金币" % sell) if sell > 0 else "不可出售"), 14, C_INK))
+		if sell > 0 and not bool(info.get("locked", false)):
+			var cap := maxi(int(info.get("count", 1)), 1)
+			# 换选中目标时数量回到 1，别把上个物品的份数带过来。
+			if _sell_qty_for != _selected_item:
+				_sell_qty_for = _selected_item
+				_sell_qty = 1
+			_sell_qty = clampi(_sell_qty, 1, cap)
+			_bag_detail.add_child(_build_sell_qty_row(sell, cap))
 	if bool(info.get("locked", false)):
 		_bag_detail.add_child(_label("状态    已锁定（禁止使用 / 出售）", 13, C_ACC))
 	var category := str(info.get("category", ""))
@@ -909,6 +932,52 @@ func _refresh_detail() -> void:
 	if act.get_child_count() > 1:
 		_bag_detail.add_child(act)
 
+## 出售数量行：－ / 数量 / ＋ / 全部 + 可得金币。
+## 上限取「该格数量」而非同名物品总和——服务端 SellItem 只从第一格扣。
+func _build_sell_qty_row(unit: int, cap: int) -> Control:
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 6)
+	h.add_child(_label("出售数量", 14, C_INK))
+	_sell_minus = _button("－")
+	_sell_minus.custom_minimum_size = Vector2(28, 26)
+	_sell_minus.pressed.connect(func() -> void: _set_sell_qty(_sell_qty - 1))
+	h.add_child(_sell_minus)
+	_sell_qty_label = _label(str(_sell_qty), 14, C_INK, true)
+	_sell_qty_label.custom_minimum_size = Vector2(36, 26)
+	_sell_qty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_sell_qty_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	h.add_child(_sell_qty_label)
+	_sell_plus = _button("＋")
+	_sell_plus.custom_minimum_size = Vector2(28, 26)
+	_sell_plus.pressed.connect(func() -> void: _set_sell_qty(_sell_qty + 1))
+	h.add_child(_sell_plus)
+	_sell_all = _button("全部", false)
+	_sell_all.custom_minimum_size = Vector2(52, 26)
+	_sell_all.pressed.connect(func() -> void: _set_sell_qty(cap))
+	h.add_child(_sell_all)
+	_sell_gain_label = _label("可得 %d 金币" % (_sell_qty * unit), 13, C_ACC)
+	_sell_gain_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sell_gain_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_sell_gain_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	h.add_child(_sell_gain_label)
+	_sync_sell_qty_ui(unit, cap)
+	return h
+
+func _set_sell_qty(n: int) -> void:
+	var info := _selected_bag_info()
+	var cap := maxi(int(info.get("count", 1)), 1)
+	_sell_qty = clampi(n, 1, cap)
+	_sync_sell_qty_ui(int(info.get("sell", 0)), cap)
+
+func _sync_sell_qty_ui(unit: int, cap: int) -> void:
+	if _sell_qty_label == null or not is_instance_valid(_sell_qty_label):
+		return
+	_sell_qty_label.text = str(_sell_qty)
+	_sell_gain_label.text = "可得 %d 金币" % (_sell_qty * unit)
+	_sell_minus.disabled = _sell_qty <= 1
+	_sell_plus.disabled = _sell_qty >= cap
+	_sell_all.disabled = _sell_qty >= cap
+
 func _wear_selected(id: String) -> void:
 	await EquipStore.wear(id)
 	await QuestStore.refresh_bag()
@@ -943,7 +1012,11 @@ func _on_bag_sell() -> void:
 	if int(info.get("sell", 0)) <= 0:
 		_show_toast("该物品不可出售")
 		return
-	await QuestStore.sell_item(_selected_item, 1)
+	# 按选择器数量出售；服务端只从第一格扣，故上限就是该格数量。
+	var qty := clampi(_sell_qty, 1, maxi(int(info.get("count", 1)), 1))
+	var err := await QuestStore.sell_item(_selected_item, qty)
+	if err == "":
+		_sell_qty = 1
 
 func _on_bag_lock() -> void:
 	if _selected_item == "":
