@@ -1,6 +1,6 @@
 // Package equip 为装备穿戴域（M2c 切片二：6/1 穿戴、6/2 卸下、6/3 视图）。
 // 属性 = 门派×等级派生基线（battle.DerivedStats）+ 已穿戴装备 stats 累加；
-// 品质共鸣加成数值待数值规范 §9.2 落地，本域不发明加成。
+// 品质共鸣数值按 V1.29《套装加成配置表》V1.0 结算（一档全属性 / 二档主副项 + 八派微调）。
 package equip
 
 import (
@@ -96,7 +96,8 @@ func (s *Service) HandleView(ctx context.Context, sess *session.Session, _ map[s
 	if err != nil {
 		return nil, codeGeneric, "读取角色失败"
 	}
-	base, err := battle.DerivedStatsWithPoints(char.Level, char.Faction, s.cfg.Battle, s.cfg.Levels.PointGains, char.PointsMap())
+	// 基线 + 加点 + 装备 + 品质共鸣，与战斗出场属性共用同一条管线（V1.29 §9.2）。
+	fin, err := battle.LoadFinalStats(ctx, &char, s.equips, s.cfg)
 	if err != nil {
 		return nil, codeGeneric, "属性派生失败"
 	}
@@ -105,7 +106,6 @@ func (s *Service) HandleView(ctx context.Context, sess *session.Session, _ map[s
 		return nil, codeGeneric, "读取装备失败"
 	}
 	slots := map[string]any{}
-	sum := map[string]int{}
 	for slot, itemID := range equipped {
 		def := s.cfg.Items.ByID(itemID)
 		if def == nil {
@@ -114,17 +114,29 @@ func (s *Service) HandleView(ctx context.Context, sess *session.Session, _ map[s
 		slots[slot] = map[string]any{
 			"id": itemID, "name": def.Name, "quality": s.cfg.Items.ItemQuality(itemID), "stats": def.Stats,
 		}
-		for k, v := range def.Stats {
-			sum[k] += v
-		}
 	}
+	st := fin.Stats
 	attrs := map[string]any{
-		"hp": base.HP + sum["hp"], "mp": base.MP + sum["mp"],
-		"patk": base.PAtk + sum["patk"], "matk": base.MAtk + sum["matk"],
-		"pdef": base.PDef + sum["pdef"], "mdef": base.MDef + sum["mdef"],
-		"speed": base.Speed + sum["speed"],
-		"hit": base.PHit, "dodge": base.PDodge,
-		"crit": base.PCrit, "combo": base.PCombo, "resist": base.SealRes,
+		"hp": st.HP, "mp": st.MP, "patk": st.PAtk, "matk": st.MAtk,
+		"pdef": st.PDef, "mdef": st.MDef, "speed": st.Speed,
+		"hit": st.PHit, "dodge": st.PDodge,
+		"crit": st.PCrit, "combo": st.PCombo, "resist": st.SealRes,
+		"sealhit": st.SealHit, "mcrit": st.MCrit,
 	}
-	return map[string]any{"slots": slots, "attrs": attrs}, codeOK, ""
+	return map[string]any{
+		"slots": slots,
+		"attrs": attrs,
+		"suit":  suitView(fin.Suit),
+	}, codeOK, ""
+}
+
+// suitView 下发品质共鸣明细，客户端只负责展示，不重算规则。
+func suitView(r config.SuitResult) map[string]any {
+	return map[string]any{
+		"tier": r.Tier, "quality": r.Quality, "count": r.Count,
+		"all_pct": r.AllPct, "main_attrs": r.MainAttrs, "main_pct": r.MainPct,
+		"sub_attr": r.SubAttr, "sub_pct": r.SubPct,
+		"tweak_attr": r.TweakAttr, "tweak_pct": r.TweakPct,
+		"percent": r.Percent,
+	}
 }

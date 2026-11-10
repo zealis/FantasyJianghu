@@ -308,14 +308,23 @@ func (b *Battle) damageRollTyped(atk, tgt *Unit, mult float64, levelDiff int, at
 	return damageOutcome{value: out, crit: crit, combo: combo}
 }
 
-// controlRoll 控制结算（公式表 §4）：(基础+封印命中)×(1−抗性)×压制×0.7^连控；
+// controlRoll 控制结算（公式表 §4）：(基础 + 封印命中)×(1−抗性)×压制×0.7^连控；
 // 硬控结束 1 回合内免疫同类（封技能不属硬控免疫范围）。
-func (b *Battle) controlRoll(ctrlType string, baseRate float64, tgt *Unit, levelDiff int) bool {
+//
+// 封印命中（SealHit，万分制）此前只存在于属性表、未进入公式，导致套装/词条给的封印命中空转；
+// 这里按文档口径把施法者的 SealHit 加到基础成功率上（万分制 → 概率），再乘抗性与压制。
+func (b *Battle) controlRoll(ctrlType string, baseRate float64, caster, tgt *Unit, levelDiff int) bool {
 	if isHard(ctrlType, b.F.Control.HardTypes) && tgt.LastHardEndTurn > 0 && b.Turn-tgt.LastHardEndTurn <= b.F.Control.ImmuneTurns {
 		return false
 	}
 	sup := 1.0 + float64(levelDiff)*b.F.Damage.LevelDiffPerLevel
-	rate := (baseRate / 100.0) * (1 - float64(effectiveStats(tgt).SealRes)/10000.0) * sup * math.Pow(b.F.Control.ComboDecay, float64(tgt.ControlCount))
+	sealHit := 0
+	if caster != nil {
+		sealHit = effectiveStats(caster).SealHit
+	}
+	rate := (baseRate/100.0 + float64(sealHit)/10000.0) *
+		(1 - float64(effectiveStats(tgt).SealRes)/10000.0) * sup *
+		math.Pow(b.F.Control.ComboDecay, float64(tgt.ControlCount))
 	if b.f64() < rate {
 		tgt.ControlCount++
 		return true
@@ -470,7 +479,7 @@ func (b *Battle) executeSkill(actor *Unit, targets []*Unit, skill config.SkillDe
 	}
 	if skill.Control != nil && targets[0].Alive {
 		target := targets[0]
-		if b.controlRoll(skill.Control.Type, skill.Control.Rate, target, levelDiff) {
+		if b.controlRoll(skill.Control.Type, skill.Control.Rate, actor, target, levelDiff) {
 			duration := skill.Control.Duration
 			if isHard(skill.Control.Type, b.F.Control.HardTypes) {
 				target.HardTurns = duration // 硬控：失去行动

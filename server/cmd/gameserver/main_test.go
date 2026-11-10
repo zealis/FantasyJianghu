@@ -79,6 +79,24 @@ func packTestConfig(t *testing.T) string {
 	if err := os.WriteFile(filepath.Join(src, "level", "levels.json"), []byte(levels), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	// V1.29 两张数值表（套装 / 宗派战胜场）：打包必填，直接复用仓库真实文件。
+	for _, rel := range []string{"suit/suit.json", "sect_war/sect_war.json"} {
+		real, err := filepath.Abs(filepath.Join("..", "..", "configs", "source", filepath.FromSlash(rel)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		raw, err := os.ReadFile(real)
+		if err != nil {
+			t.Fatal(err)
+		}
+		dst := filepath.Join(src, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(dst, raw, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
 	// 战斗域源（真实仓库文件）。
 	battleRoot, err := filepath.Abs(filepath.Join("..", "..", "configs", "source", "battle"))
 	if err != nil {

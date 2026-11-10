@@ -12,16 +12,19 @@ import (
 
 // Service 为战斗域 WS 协议接入（主码 4）。
 type Service struct {
-	mgr   *Manager
-	chars *store.CharactersRepo
-	cfg   config.Data
+	mgr    *Manager
+	chars  *store.CharactersRepo
+	equips *store.EquipsRepo
+	cfg    config.Data
 	// testAttach 仅测试注入（token → 战斗单位直连）。
 	testUnits map[string]*Unit
 	testMon   *Unit
 }
 
-func NewService(mgr *Manager, chars *store.CharactersRepo, cfg config.Data) *Service {
-	return &Service{mgr: mgr, chars: chars, cfg: cfg, testUnits: map[string]*Unit{}}
+// NewService 构造战斗服务。equips 用于把已穿戴装备与品质共鸣并入出场属性
+// （M2c 之前只带「基线+加点」，装备不进战斗）；允许为 nil（纯基线，仅测试用）。
+func NewService(mgr *Manager, chars *store.CharactersRepo, equips *store.EquipsRepo, cfg config.Data) *Service {
+	return &Service{mgr: mgr, chars: chars, equips: equips, cfg: cfg, testUnits: map[string]*Unit{}}
 }
 
 // 测试注入钩子。
@@ -62,9 +65,15 @@ func (s *Service) playerUnit(ctx context.Context, charID int64) (*Unit, error) {
 	if err != nil {
 		return nil, err
 	}
+	// 基线 → 加点 → 装备 → 品质共鸣，一条管线（V1.29 §9.2）。装备读失败不阻断进场，回落基线。
 	st, err := DerivedStatsWithPoints(c.Level, c.Faction, s.cfg.Battle, s.cfg.Levels.PointGains, c.PointsMap())
 	if err != nil {
 		return nil, err
+	}
+	if s.equips != nil {
+		if fin, err := LoadFinalStats(ctx, &c, s.equips, s.cfg); err == nil {
+			st = fin.Stats
+		}
 	}
 	u := &Unit{ID: c.ID, Name: c.Name, Side: 0, Level: c.Level, Faction: c.Faction,
 		BaseStats: st, Stats: st, HP: st.HP, MP: st.MP, Skills: s.skillsForLevel(c.Level), Alive: true}

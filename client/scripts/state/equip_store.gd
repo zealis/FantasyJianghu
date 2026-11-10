@@ -6,6 +6,9 @@ signal changed
 
 var slots: Dictionary = {}   # slot → {id, name, quality, stats}
 var attrs: Dictionary = {}   # hp/mp/patk/.../crit(万分制)
+## 品质共鸣明细（服务端 6/3 下发，V1.29《套装加成配置表》V1.0）：
+## tier/quality/count/all_pct/main_attrs/main_pct/sub_attr/sub_pct/tweak_attr/tweak_pct。
+var suit: Dictionary = {}
 var loaded: bool = false
 
 func refresh() -> void:
@@ -13,6 +16,7 @@ func refresh() -> void:
 	if int(resp.get("code", -1)) == 0:
 		slots = resp.get("slots", {})
 		attrs = resp.get("attrs", {})
+		suit = resp.get("suit", {})
 		loaded = true
 		changed.emit()
 

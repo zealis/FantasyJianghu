@@ -87,6 +87,8 @@ type Data struct {
 	Quests   QuestData             // 任务域（GDD §9：主线链 + 三类日常）
 	Items    ItemData              // 物品字典最小集（任务奖励引用 + 背包容量）
 	Levels   LevelData             // 等级域（GDD §4.2：经验曲线 + 突破关口）
+	Suit     SuitData              // 套装加成域（V1.29：品质共鸣 + 八派微调）
+	SectWar  SectWarData           // 宗派战胜场加成域（V1.29：赛季胜场分档）
 }
 
 // LineCapacity 按场景类型取每线人数上限（V1.27 阈值）；未知类型返回 0。
@@ -202,6 +204,12 @@ func Validate(d Data) error {
 	if err := validateLevels(d.Levels); err != nil {
 		return err
 	}
+	if err := validateSuit(d.Suit, d.Factions); err != nil {
+		return err
+	}
+	if err := validateSectWar(d.SectWar); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -270,6 +278,16 @@ func Load(dir string) (Data, error) {
 		return data, err
 	}
 	data.Levels = levels
+	suit, err := loadSuitDir(dir)
+	if err != nil {
+		return data, err
+	}
+	data.Suit = suit
+	sectWar, err := loadSectWarDir(dir)
+	if err != nil {
+		return data, err
+	}
+	data.SectWar = sectWar
 	data.Scenes = map[string]SceneLogic{}
 	for name := range files {
 		if filepath.Dir(name) != "scenes" {
@@ -300,4 +318,14 @@ func jsonMarshal(v any) ([]byte, error)   { return json.Marshal(v) }
 func sha256Hex(b []byte) string {
 	s := sha256.Sum256(b)
 	return hex.EncodeToString(s[:])
+}
+
+// CategoryOf 取门派系别（物理/法术/封印/肉盾）；未知门派返回空串。
+func (d Data) CategoryOf(faction string) string {
+	for _, f := range d.Factions {
+		if f.Name == faction {
+			return f.Category
+		}
+	}
+	return ""
 }

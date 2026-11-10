@@ -1,0 +1,9 @@
+{
+  "tiers": [
+    {"wins": 10, "all_pct": 1.0},
+    {"wins": 30, "all_pct": 2.0},
+    {"wins": 60, "all_pct": 3.0},
+    {"wins": 100, "all_pct": 4.0}
+  ],
+  "reset_per_season": true
+}

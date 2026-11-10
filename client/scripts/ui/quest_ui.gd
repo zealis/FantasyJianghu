@@ -34,6 +34,13 @@ const STAT_NAME := {
 	"hp": "气血", "mp": "法力", "patk": "物攻", "matk": "法攻",
 	"pdef": "物防", "mdef": "法防", "speed": "速度",
 }
+## 品质共鸣用属性名（含概率项，数值规范 §1.2 万分制）。
+const SUIT_ATTR_NAME := {
+	"hp": "气血", "mp": "法力", "patk": "物攻", "matk": "法攻",
+	"pdef": "物防", "mdef": "法防", "speed": "速度",
+	"pcrit": "暴击", "mcrit": "法暴", "pcombo": "连击",
+	"sealhit": "封印命中", "pdodge": "闪避",
+}
 
 var _theme: Theme = preload("res://resources/theme_paper.tres")
 var _bold: FontVariation
@@ -760,7 +767,42 @@ func _refresh_attrs() -> void:
 			lab.text = "%.1f%%" % (float(v) / 100.0)
 		else:
 			lab.text = _fmt(v)
-	# 品质共鸣：按已装备品质计数（≥3 同品质显示已激活；加成数值待数值规范 §9.2）。
+	_refresh_resonance()
+
+## 品质共鸣行：文案直接取服务端 suit 明细，客户端不重算规则（V1.29 配置表 §4）。
+func _refresh_resonance() -> void:
+	var info: Dictionary = EquipStore.suit
+	if int(info.get("tier", 0)) <= 0:
+		var best := _best_quality_count()
+		_resonance_label.text = ("品质共鸣： 未激活 （同品质 %d/%d 件）" % [best, 3]) if best > 0 \
+			else "品质共鸣： 未激活 （同品质 3 件起）"
+		return
+	var parts: Array = []
+	if float(info.get("all_pct", 0)) > 0:
+		parts.append("全属性 +%s%%" % _pct_txt(info.get("all_pct", 0)))
+	var mains: Array = info.get("main_attrs", [])
+	var main_pct := float(info.get("main_pct", 0))
+	if main_pct > 0 and mains.size() > 0:
+		var names: Array = []
+		for k in mains:
+			names.append(_suit_attr(str(k)))
+		parts.append("%s +%s%%" % ["/".join(names), _pct_txt(main_pct)])
+	# 副项与门派微调同属性时合并展示（剑宗暴击 3.5+3=6.5、符观封印命中 7+3=10，配置表 §4 口径）。
+	var extras: Dictionary = {}
+	var sub := str(info.get("sub_attr", ""))
+	if sub != "" and float(info.get("sub_pct", 0)) > 0:
+		extras[sub] = float(info.get("sub_pct", 0))
+	var tweak := str(info.get("tweak_attr", ""))
+	if tweak != "" and float(info.get("tweak_pct", 0)) > 0:
+		extras[tweak] = float(extras.get(tweak, 0.0)) + float(info.get("tweak_pct", 0))
+	for k in extras:
+		parts.append("%s +%s%%" % [_suit_attr(str(k)), _pct_txt(extras[k])])
+	var tier_txt := "一档" if int(info.get("tier", 0)) == 1 else "二档"
+	_resonance_label.text = "品质共鸣： %s · %s %d 件 ｜ %s" % [
+		tier_txt, str(info.get("quality", "")), int(info.get("count", 0)), "  ".join(parts)]
+
+## 未激活时给出「还差几件」的提示。
+func _best_quality_count() -> int:
 	var counts: Dictionary = {}
 	for slot in EquipStore.slots:
 		var q := str((EquipStore.slots[slot] as Dictionary).get("quality", "凡品"))
@@ -768,10 +810,16 @@ func _refresh_attrs() -> void:
 	var best := 0
 	for q in counts:
 		best = maxi(best, int(counts[q]))
-	if best >= 3:
-		_resonance_label.text = "品质共鸣： 已激活 （同品质 %d 件）" % best
-	else:
-		_resonance_label.text = "品质共鸣： 未激活 （同品质 3 件起）"
+	return best
+
+func _suit_attr(key: String) -> String:
+	return str(SUIT_ATTR_NAME.get(key, key))
+
+func _pct_txt(v: Variant) -> String:
+	var f := float(v)
+	if is_equal_approx(f, round(f)):
+		return "%d" % int(round(f))
+	return "%.1f" % f
 
 func _bag_cell(info: Dictionary) -> Control:
 	var filled := not info.is_empty()

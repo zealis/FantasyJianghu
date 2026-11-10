@@ -130,22 +130,22 @@ func TestControlDecayAndImmune(t *testing.T) {
 	b := &Battle{F: cfg, rng: flatRng(0.01), Turn: 1}
 	tgt := mkUnit(2, "乙", 1, 100, 100, 1000)
 	// 基础 70% + 0 封印命中 × (1-10% 抗性) = 63% × 压制 1.0 = 63%；f=0.01 < 63% 必中。
-	if !b.controlRoll("麻痹", 70, tgt, 0) {
+	if !b.controlRoll("麻痹", 70, nil, tgt, 0) {
 		t.Fatal("首次控制应命中")
 	}
 	// 连控递减 ×0.7：第二次 44.1% 仍命中（f=0.01）。
 	b.Turn = 2
-	if !b.controlRoll("麻痹", 70, tgt, 0) {
+	if !b.controlRoll("麻痹", 70, nil, tgt, 0) {
 		t.Fatal("递减后仍应命中")
 	}
 	// 免疫窗：硬控结束当回合后 1 回合内同类必失败（f=0.01 但免疫直接 false）。
 	b.Turn = 3
 	tgt.LastHardEndTurn = 2 // 第 2 回合硬控结束 → 第 3 回合免疫
-	if b.controlRoll("麻痹", 70, tgt, 0) {
+	if b.controlRoll("麻痹", 70, nil, tgt, 0) {
 		t.Fatal("免疫窗内同类硬控应失败（Focus 3）")
 	}
 	// 封技能不属硬控免疫范围。
-	if !b.controlRoll("封技能", 70, tgt, 0) {
+	if !b.controlRoll("封技能", 70, nil, tgt, 0) {
 		t.Fatal("封技能不受硬控免疫窗限制")
 	}
 }
@@ -535,5 +535,23 @@ func TestDamageFlags(t *testing.T) {
 	}
 	if _, ok := got["lifesteal"]; ok {
 		t.Fatal("吸血未实现，不得伪造 lifesteal flag")
+	}
+}
+
+// TestSealHitEntersControlFormula 封印命中必须真正进公式（V1.29 套装符观 +10% 的落点）：
+// 基础 70% × (1−10% 抗性) = 63%，随机 65% 时无封印命中应失败；+10% 后 72% 应命中。
+func TestSealHitEntersControlFormula(t *testing.T) {
+	cfg := formulaCfg()
+	b := &Battle{F: cfg, rng: flatRng(0.65), Turn: 1}
+	tgt := mkUnit(2, "乙", 1, 100, 100, 1000)
+	tgt.BaseStats.SealRes = 1000 // 10% 抗性
+	caster := mkUnit(1, "甲", 0, 100, 100, 1000)
+	if b.controlRoll("封技能", 70, nil, tgt, 0) {
+		t.Fatal("63% 成功率在随机 65% 时不应命中")
+	}
+	tgt.ControlCount = 0
+	caster.BaseStats.SealHit = 1000 // 封印命中 +10%（万分制）
+	if !b.controlRoll("封技能", 70, caster, tgt, 0) {
+		t.Fatal("封印命中 +10% 后 (70+10)%×0.9=72% 应命中 65% 随机")
 	}
 }

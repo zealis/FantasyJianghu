@@ -85,6 +85,16 @@ func Pack(source, out, version string) error {
 		return err
 	}
 	data.Levels = levels
+	suit, err := loadSuitDir(source)
+	if err != nil {
+		return err
+	}
+	data.Suit = suit
+	sectWar, err := loadSectWarDir(source)
+	if err != nil {
+		return err
+	}
+	data.SectWar = sectWar
 
 	// 结构与引用完整性校验：不通过不生成配置包（§7.2）。
 	if err := Validate(data); err != nil {
@@ -114,6 +124,12 @@ func Pack(source, out, version string) error {
 		return err
 	}
 	if err := packConfigFile(&mf, target, source, "level/levels.json"); err != nil {
+		return err
+	}
+	if err := packConfigFile(&mf, target, source, "suit/suit.json"); err != nil {
+		return err
+	}
+	if err := packConfigFile(&mf, target, source, "sect_war/sect_war.json"); err != nil {
 		return err
 	}
 	for name, raw := range sceneRaws {

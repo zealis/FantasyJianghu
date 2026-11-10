@@ -110,11 +110,11 @@ func buildServer(opts Options) (*ServerHandle, error) {
 	// 5. 业务域服务并登记（主码登记制）。
 	battleMgr := battle.NewManager(data.Battle, db.Battles)
 	acct := account.NewService(db.Accounts, db.Characters, sessions, st, data)
-	battleSvc := battle.NewService(battleMgr, db.Characters, data)
+	battleSvc := battle.NewService(battleMgr, db.Characters, db.Equips, data)
 	chars := character.NewService(db.Characters, sessions, data)
 	worldSvc := world.NewService(db.Characters, sessions, data, gw)
 	// M2b 任务域：进度来源为战斗终局（kill）、NPC 对话（talk）、进场（visit）。
-	questSvc := quest.NewService(db.Quests, db.Characters, db.Items, data, gw, protocol.SubQuestProgress)
+	questSvc := quest.NewService(db.Quests, db.Characters, db.Items, db.Equips, data, gw, protocol.SubQuestProgress)
 	itemSvc := item.NewService(db.Items, data)
 	equipSvc := equip.NewService(db.Items, db.Equips, db.Characters, data)
 	npcSvc := npc.NewService(data, questSvc)

@@ -173,6 +173,24 @@ func _run() -> void:
 	if bag_texts.contains("使用"):
 		_fail("无 use 定义的物品不应渲染使用按钮")
 		return
+	# 品质共鸣文案取服务端 suit 明细（V1.29 配置表 §4）：副项与微调同属性合并为 6.5%。
+	EquipStore.suit = {"tier": 2, "quality": "完美", "count": 5, "all_pct": 5.0,
+		"main_attrs": ["patk"], "main_pct": 9.0, "sub_attr": "pcrit", "sub_pct": 3.5,
+		"tweak_attr": "pcrit", "tweak_pct": 3.0}
+	_layer._refresh_resonance()
+	await get_tree().process_frame
+	var res_text: String = str(_layer._resonance_label.text)
+	if not res_text.contains("二档 · 完美 5 件"):
+		_fail("共鸣档位文案不符: %s" % res_text)
+		return
+	if not res_text.contains("全属性 +5%") or not res_text.contains("物攻 +9%"):
+		_fail("共鸣全属性/主项文案不符: %s" % res_text)
+		return
+	if not res_text.contains("暴击 +6.5%"):
+		_fail("暴击应合并为 6.5%%（副项 3.5 + 微调 3）: %s" % res_text)
+		return
+	EquipStore.suit = {}
+
 	# 整理/出售/锁定已开放：按钮可用，详情含出售价。
 	for op in ["sort", "sell", "lock"]:
 		if (_layer._bag_ops[op] as Button).disabled:

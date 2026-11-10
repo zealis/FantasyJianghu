@@ -150,3 +150,106 @@ func TestWearRejects(t *testing.T) {
 		t.Fatalf("非法槽应拒绝: %d", code)
 	}
 }
+// suitEnv 构造一套带品质共鸣配置的环境：五件完美物理装备 + 断岳剑宗微调。
+func suitEnv(t *testing.T) (*Service, *store.DB, *session.Session) {
+	t.Helper()
+	db, err := store.Open(":memory:")
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { db.Close() })
+	if err := db.Migrate(); err != nil {
+		t.Fatalf("Migrate: %v", err)
+	}
+	ctx := context.Background()
+	acctID, err := db.Accounts.CreateAccount(ctx, "共鸣侠", "hash", "")
+	if err != nil {
+		t.Fatalf("CreateAccount: %v", err)
+	}
+	charID, err := db.Characters.CreateCharacter(ctx, acctID, "剑痴", "断岳剑宗", "男")
+	if err != nil {
+		t.Fatalf("CreateCharacter: %v", err)
+	}
+	anchor := config.AnchorStat{HP: 1000, MP: 480, PAtk: 100, MAtk: 100, PDef: 50, MDef: 60, Speed: 100}
+	// 五槽各一件完美装备，数值统一 +10 物攻以便核对百分比是否乘在装备之后。
+	items := []config.ItemDef{
+		{ID: "w1", Name: "武器", Category: "装备", Stack: 1, Slot: "weapon", Quality: "完美",
+			Stats: map[string]int{"patk": 10}},
+		{ID: "c1", Name: "衣服", Category: "装备", Stack: 1, Slot: "clothes", Quality: "完美",
+			Stats: map[string]int{"pdef": 10}},
+		{ID: "h1", Name: "帽子", Category: "装备", Stack: 1, Slot: "hat", Quality: "完美",
+			Stats: map[string]int{"pdef": 10}},
+		{ID: "n1", Name: "项链", Category: "装备", Stack: 1, Slot: "necklace", Quality: "完美",
+			Stats: map[string]int{"mdef": 10}},
+		{ID: "b1", Name: "鞋子", Category: "装备", Stack: 1, Slot: "boots", Quality: "完美",
+			Stats: map[string]int{"speed": 10}},
+	}
+	cfg := config.Data{
+		Items: config.ItemData{BagCapacity: 20, Items: items},
+		Factions: []config.FactionInfo{
+			{Name: "断岳剑宗", Category: "物理", Color: "朱橙", Residence: "高天崖", Weapon: "剑",
+				Feature: "暴击", Secret: "断岳剑经"},
+		},
+		Battle: config.BattleData{
+			Classes: []config.BattleClass{{Class: "物理", Factions: []string{"断岳剑宗"},
+				Anchors: map[string]config.AnchorStat{"20": anchor}}},
+			ClassBook: config.ClassBook{LowCurveExp: 1.0, LowCurveBaseLv: 20},
+		},
+		Suit: config.SuitData{
+			AllAttrs:     []string{"hp", "mp", "patk", "matk", "pdef", "mdef", "speed"},
+			QualityOrder: map[string]int{"凡品": 1, "良品": 2, "精品": 3, "极品": 4, "完美": 5},
+			Tier1AllPct:  []float64{1, 2, 3, 4, 5},
+			Tier2MainPct: []float64{5, 6, 7, 8, 9},
+			Systems: map[string]config.SuitSystem{
+				"物理": {Main: []string{"patk"}, Sub: "pcrit", SubPct: []float64{1.5, 2, 2.5, 3, 3.5}},
+			},
+			FactionTweaks: map[string]config.FactionTweak{
+				"断岳剑宗": {Attr: "pcrit", Pct: []float64{1, 1.5, 2, 2.5, 3}},
+			},
+		},
+	}
+	return NewService(db.Items, db.Equips, db.Characters, cfg), db, &session.Session{CharID: charID}
+}
+
+// TestViewSuitResonanceTier2 五件同品质 → 二档：全属性 +5%、物攻 +9%、暴击 3.5%+3%=6.5%（配置表 §4）。
+func TestViewSuitResonanceTier2(t *testing.T) {
+	svc, db, sess := suitEnv(t)
+	ctx := context.Background()
+	// 拉到锚点等级 20：否则 1 级会被幂律外延到很低，断言数值不便核对。
+	if _, err := db.SQL().Exec(`UPDATE characters SET level = 20 WHERE id = ?`, sess.CharID); err != nil {
+		t.Fatalf("设置等级: %v", err)
+	}
+	for _, id := range []string{"w1", "c1", "h1", "n1", "b1"} {
+		seed(t, db, sess.CharID, id, 1)
+		if _, code, msg := svc.HandleWear(ctx, sess, map[string]any{"item_id": id}); code != codeOK {
+			t.Fatalf("穿戴 %s 失败: %d %s", id, code, msg)
+		}
+	}
+	out, code, msg := svc.HandleView(ctx, sess, map[string]any{})
+	if code != codeOK {
+		t.Fatalf("view code=%d %s", code, msg)
+	}
+	suit, ok := out["suit"].(map[string]any)
+	if !ok {
+		t.Fatal("视图缺 suit 明细")
+	}
+	if suit["tier"].(int) != 2 || suit["quality"].(string) != "完美" || suit["count"].(int) != 5 {
+		t.Fatalf("共鸣应为二档/完美/5 件: %+v", suit)
+	}
+	if suit["tweak_pct"].(float64) != 3 {
+		t.Fatalf("断岳剑宗微调应为 3%%: %+v", suit["tweak_pct"])
+	}
+	attrs := out["attrs"].(map[string]any)
+	// 物攻：(100 基线 + 10 装备) × (1 + 5% 全属性 + 9% 主项) = 110 × 1.14 = 125.4 → 125
+	if got := attrs["patk"].(int); got != 125 {
+		t.Fatalf("物攻应为 125（含装备与共鸣），实际 %d", got)
+	}
+	// 暴击：本测试未配 formula.crit.base_rate，基线为 0；副项 3.5% + 微调 3% = 6.5% → 650 万分制。
+	if got := attrs["crit"].(int); got != 650 {
+		t.Fatalf("暴击应为 650 万分制（6.5%%），实际 %d", got)
+	}
+	// 气血：1000 × 1.05 = 1050（无装备气血）
+	if got := attrs["hp"].(int); got != 1050 {
+		t.Fatalf("气血应为 1000×1.05=1050，实际 %d", got)
+	}
+}

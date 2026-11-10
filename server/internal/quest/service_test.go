@@ -88,7 +88,7 @@ func newEnv(t *testing.T) *testEnv {
 		},
 	}
 	pusher := &fakePusher{}
-	svc := NewService(db.Quests, db.Characters, db.Items, cfg, pusher, 4)
+	svc := NewService(db.Quests, db.Characters, db.Items, db.Equips, cfg, pusher, 4)
 	fixed := time.Date(2026, 11, 9, 10, 0, 0, 0, cst)
 	svc.SetClock(func() time.Time { return fixed })
 	return &testEnv{svc: svc, pusher: pusher, db: db, charID: charID, cfg: cfg}

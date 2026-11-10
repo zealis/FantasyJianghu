@@ -3,10 +3,12 @@
 package battle
 
 import (
+	"context"
 	"fmt"
 	"math"
 
 	"fantasy-jianghu/server/internal/config"
+	"fantasy-jianghu/server/internal/store"
 )
 
 // UnitStats 为战斗二级属性（数值规范 §1.2 完整清单的 M2a 子集）。
@@ -112,6 +114,11 @@ func anchorInterpolate(level int, class *config.BattleClass, book config.ClassBo
 	keys := sortedLevels(class.Anchors)
 	if len(keys) == 0 {
 		return config.AnchorStat{}, fmt.Errorf("定位 %s 无锚点", class.Class)
+	}
+	// 恰好命中锚点直接返回：单锚点配置（只有一个等级档）无法插值，
+	// 旧实现会一路掉到函数末尾报错，这里补上直取分支。
+	if a, ok := class.Anchors[fmt.Sprint(level)]; ok {
+		return a, nil
 	}
 	// 低级外延：最低锚点 × (level/base)^exp。
 	if level < keys[0] {
@@ -226,4 +233,77 @@ func applyCoeff(a *config.AnchorStat, coeff map[string]float64) {
 	a.PDef = mul(a.PDef, "pdef")
 	a.MDef = mul(a.MDef, "mdef")
 	a.Speed = mul(a.Speed, "speed")
+}
+
+// FinalStatsResult 为角色最终二级属性与品质共鸣明细。
+type FinalStatsResult struct {
+	Stats UnitStats
+	Suit  config.SuitResult
+}
+
+// LoadFinalStats 计算角色最终二级属性（M2c 属性管线的唯一入口）：
+// 门派×等级基线 → 一级属性点收益 → 装备属性累加 → 品质共鸣百分比（V1.29 §9.2/§9.6 口径）。
+//
+// 此前 4/1 战斗单位只带「基线+点数」，装备与共鸣完全没进战斗——本函数是那处缺陷的修复点。
+func LoadFinalStats(ctx context.Context, char *store.Character, equips *store.EquipsRepo, cfg config.Data) (FinalStatsResult, error) {
+	var out FinalStatsResult
+	base, err := DerivedStatsWithPoints(char.Level, char.Faction, cfg.Battle,
+		cfg.Levels.PointGains, char.PointsMap())
+	if err != nil {
+		return out, err
+	}
+	equipped, err := equips.List(ctx, char.ID)
+	if err != nil {
+		return out, err
+	}
+	sum := map[string]int{}
+	quals := make([]string, 0, len(equipped))
+	for _, itemID := range equipped {
+		if def := cfg.Items.ByID(itemID); def != nil {
+			for k, v := range def.Stats {
+				sum[k] += v
+			}
+		}
+		quals = append(quals, cfg.Items.ItemQuality(itemID))
+	}
+	out.Suit = cfg.Suit.SuitResonance(quals, char.Faction, cfg.CategoryOf(char.Faction))
+	out.Stats = applyEquipAndSuit(base, sum, out.Suit.Percent)
+	return out, nil
+}
+
+// applyEquipAndSuit 先累加装备的数值型属性，再按百分比应用共鸣加成。
+// 数值型按百分比乘算（不降低原值），概率型（万分制）按百分点相加（数值规范 §1.2）。
+func applyEquipAndSuit(st UnitStats, equip map[string]int, pct map[string]float64) UnitStats {
+	st.HP += equip["hp"]
+	st.MP += equip["mp"]
+	st.PAtk += equip["patk"]
+	st.MAtk += equip["matk"]
+	st.PDef += equip["pdef"]
+	st.MDef += equip["mdef"]
+	st.Speed += equip["speed"]
+	mul := func(v int, key string) int {
+		p := pct[key]
+		if p == 0 {
+			return v
+		}
+		n := int(math.Round(float64(v) * (1 + p/100.0)))
+		if n < v {
+			return v
+		}
+		return n
+	}
+	st.HP = mul(st.HP, "hp")
+	st.MP = mul(st.MP, "mp")
+	st.PAtk = mul(st.PAtk, "patk")
+	st.MAtk = mul(st.MAtk, "matk")
+	st.PDef = mul(st.PDef, "pdef")
+	st.MDef = mul(st.MDef, "mdef")
+	st.Speed = mul(st.Speed, "speed")
+	rate := func(v int, key string) int { return v + int(math.Round(pct[key]*100)) }
+	st.PCrit = rate(st.PCrit, "pcrit")
+	st.MCrit = rate(st.MCrit, "mcrit")
+	st.PCombo = rate(st.PCombo, "pcombo")
+	st.SealHit = rate(st.SealHit, "sealhit")
+	st.PDodge = rate(st.PDodge, "pdodge")
+	return st
 }

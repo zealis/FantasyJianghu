@@ -38,6 +38,7 @@ type Service struct {
 	quests  *store.QuestRepo
 	chars   *store.CharactersRepo
 	items   *store.ItemsRepo
+	equips  *store.EquipsRepo
 	cfg     config.Data
 	pusher  Pusher
 	now     func() time.Time
@@ -45,9 +46,10 @@ type Service struct {
 }
 
 // NewService 构造任务服务；mainSub 为主码 11 的进度推送子码。
+// equips 让 11/1 的属性预览与战斗出场属性走同一条管线（含装备与品质共鸣）。
 func NewService(quests *store.QuestRepo, chars *store.CharactersRepo, items *store.ItemsRepo,
-	cfg config.Data, pusher Pusher, mainSub uint16) *Service {
-	return &Service{quests: quests, chars: chars, items: items, cfg: cfg, pusher: pusher,
+	equips *store.EquipsRepo, cfg config.Data, pusher Pusher, mainSub uint16) *Service {
+	return &Service{quests: quests, chars: chars, items: items, equips: equips, cfg: cfg, pusher: pusher,
 		now: func() time.Time { return time.Now() }, mainSub: mainSub}
 }
 
@@ -181,12 +183,34 @@ func (s *Service) buildList(ctx context.Context, charID int64) (map[string]any, 
 	gateReady := s.cfg.Levels.IsGate(c.Level) && c.Breakthrough < c.Level && c.Exp >= expNext
 	// 属性预览（加点界面右栏）需要的派生值：服务端权威计算，客户端只做展示。
 	statsView := map[string]any{}
-	if st, err := battle.DerivedStatsWithPoints(c.Level, c.Faction, s.cfg.Battle,
-		s.cfg.Levels.PointGains, c.PointsMap()); err == nil {
-		statsView = map[string]any{
-			"hp": st.HP, "mp": st.MP, "patk": st.PAtk, "matk": st.MAtk,
-			"pdef": st.PDef, "mdef": st.MDef, "speed": st.Speed,
-			"pdodge": st.PDodge, "pcrit": st.PCrit, "phit": st.PHit,
+	suitView := map[string]any{}
+	if s.equips != nil {
+		if fin, err := battle.LoadFinalStats(ctx, &c, s.equips, s.cfg); err == nil {
+			st := fin.Stats
+			statsView = map[string]any{
+				"hp": st.HP, "mp": st.MP, "patk": st.PAtk, "matk": st.MAtk,
+				"pdef": st.PDef, "mdef": st.MDef, "speed": st.Speed,
+				"pdodge": st.PDodge, "pcrit": st.PCrit, "phit": st.PHit,
+			}
+			if fin.Suit.Tier > 0 {
+				suitView = map[string]any{
+					"tier": fin.Suit.Tier, "quality": fin.Suit.Quality, "count": fin.Suit.Count,
+					"all_pct": fin.Suit.AllPct, "main_attrs": fin.Suit.MainAttrs,
+					"main_pct": fin.Suit.MainPct,
+					"sub_attr": fin.Suit.SubAttr, "sub_pct": fin.Suit.SubPct,
+					"tweak_attr": fin.Suit.TweakAttr, "tweak_pct": fin.Suit.TweakPct,
+				}
+			}
+		}
+	}
+	if len(statsView) == 0 {
+		if st, err := battle.DerivedStatsWithPoints(c.Level, c.Faction, s.cfg.Battle,
+			s.cfg.Levels.PointGains, c.PointsMap()); err == nil {
+			statsView = map[string]any{
+				"hp": st.HP, "mp": st.MP, "patk": st.PAtk, "matk": st.MAtk,
+				"pdef": st.PDef, "mdef": st.MDef, "speed": st.Speed,
+				"pdodge": st.PDodge, "pcrit": st.PCrit, "phit": st.PHit,
+			}
 		}
 	}
 	return map[string]any{
@@ -197,6 +221,7 @@ func (s *Service) buildList(ctx context.Context, charID int64) (map[string]any, 
 		"unspent_points": c.UnspentPoints,
 		"points":         c.PointsMap(),
 		"stats":          statsView,
+		"suit":           suitView,
 		"wallet":         map[string]any{"gold": wallet.Gold, "xiuwei": wallet.Xiuwei, "yuanbao": wallet.Yuanbao},
 		"daily":          daily,
 		"quests":         views,

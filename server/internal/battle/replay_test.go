@@ -91,7 +91,7 @@ func TestBattleServiceEnterAndFrame(t *testing.T) {
 	m.SetFrameHook(func(d FrameDelivery) {
 		frames = append(frames, captured{d.TurnVersion, d.Events})
 	})
-	svc := NewService(m, db.Characters, fullData(cfg))
+	svc := NewService(m, db.Characters, db.Equips, fullData(cfg))
 
 	// 玩家会话（token→unitID 由服务端映射）。
 	p := mkPlayer(1, "惊雷殿", cfg, cfg.Skills)

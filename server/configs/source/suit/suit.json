@@ -1,0 +1,28 @@
+{
+  "all_attrs": ["hp", "mp", "patk", "matk", "pdef", "mdef", "speed"],
+  "quality_order": {
+    "凡品": 1,
+    "良品": 2,
+    "精品": 3,
+    "极品": 4,
+    "完美": 5
+  },
+  "tier1_all_pct": [1.0, 2.0, 3.0, 4.0, 5.0],
+  "tier2_main_pct": [5.0, 6.0, 7.0, 8.0, 9.0],
+  "systems": {
+    "物理": {"main": ["patk"], "sub": "pcrit", "sub_pct": [1.5, 2.0, 2.5, 3.0, 3.5]},
+    "法术": {"main": ["matk"], "sub": "mcrit", "sub_pct": [1.5, 2.0, 2.5, 3.0, 3.5]},
+    "封印": {"main": ["speed"], "sub": "sealhit", "sub_pct": [3.0, 4.0, 5.0, 6.0, 7.0]},
+    "肉盾": {"main": ["pdef", "mdef"], "sub": "hp", "sub_pct": [5.0, 6.0, 7.0, 8.0, 9.0]}
+  },
+  "faction_tweaks": {
+    "断岳剑宗": {"attr": "pcrit", "pct": [1.0, 1.5, 2.0, 2.5, 3.0]},
+    "破军枪府": {"attr": "pcombo", "pct": [1.0, 1.5, 2.0, 2.5, 3.0]},
+    "惊雷殿": {"attr": "mcrit", "pct": [1.0, 1.5, 2.0, 2.5, 3.0]},
+    "璇玑星宫": {"attr": "charge_dmg", "pct": [1.0, 1.5, 2.0, 2.5, 3.0], "implemented": false},
+    "缚灵符观": {"attr": "sealhit", "pct": [1.0, 1.5, 2.0, 2.5, 3.0]},
+    "织梦谷": {"attr": "pdodge", "pct": [1.0, 1.5, 2.0, 2.5, 3.0]},
+    "金刚禅院": {"attr": "reflect", "pct": [1.0, 1.5, 2.0, 2.5, 3.0], "implemented": false},
+    "玄水宫": {"attr": "heal_bonus", "pct": [1.0, 1.5, 2.0, 2.5, 3.0], "implemented": false}
+  }
+}
