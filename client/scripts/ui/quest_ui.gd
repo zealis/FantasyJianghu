@@ -16,6 +16,33 @@ const C_INK := Color("4A3823")
 const C_MUTED := Color("78603C")
 const C_DONE_BADGE := Color("B2A894")
 const C_ACC := Color("C66E34")
+## 数值白色总则（UI 规范 §3，V1.31 定案）：面板里一切数值白色加粗，
+## 名称/标签仍用墨色或次级色；战斗飘字不适用（按 §6 分色）。
+const C_VALUE := Color("FFFFFF")
+
+## 数值标签：白色加粗 + 深褐胶囊底。
+## 宣纸米底上纯白（哪怕加描边）对比都不够，实测发灰难读；加一块深褐底既保住「数值白色」，
+## 又满足 §3 的 4.5:1 对比度下限。名称/标签仍留在米底上作次级色。
+func _value_label(text: String, size: int) -> Label:
+	var l := _label(text, size, C_VALUE, true)
+	var pill := _box(Color("3A2C1B"), Color(0, 0, 0, 0), 0, 4, 4)
+	pill.content_margin_left = 7
+	pill.content_margin_right = 7
+	pill.content_margin_top = 1
+	pill.content_margin_bottom = 1
+	l.add_theme_stylebox_override("normal", pill)
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	return l
+
+## 详情卡/属性行：标签（次级色）+ 数值（白色加粗）。
+func _kv_row(label_text: String, value_text: String, size: int = 14, label_w: int = 60) -> Control:
+	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 8)
+	var name_lab := _label(label_text, size, C_MUTED)
+	name_lab.custom_minimum_size = Vector2(label_w, 0)
+	hb.add_child(name_lab)
+	hb.add_child(_value_label(value_text, size))
+	return hb
 const C_OK := Color("57965A")
 const C_REWARD := Color("926814")
 const C_DIM := Color("968A70")
@@ -701,11 +728,15 @@ func _build_bag_right() -> Control:
 			var name_lab := _label("%s：" % str(row[1]), 14, C_MUTED)
 			name_lab.custom_minimum_size = Vector2(70, 0)
 			hb.add_child(name_lab)
-			var val := _label("—", 14, C_INK, true)
+			var val := _value_label("—", 14)
 			_bag_stats[str(row[0])] = val
 			hb.add_child(val)
-	_resonance_label = _label("品质共鸣： 未激活 （同品质 3 件起）", 13, C_MUTED)
-	right.add_child(_resonance_label)
+	var res_row := HBoxContainer.new()
+	res_row.add_theme_constant_override("separation", 6)
+	right.add_child(res_row)
+	res_row.add_child(_label("品质共鸣：", 13, C_MUTED))
+	_resonance_label = _value_label("未激活 （同品质 3 件起）", 13)
+	res_row.add_child(_resonance_label)
 	_attrs_note = _label("属性数值待服务端下发（M2c）", 11, C_MUTED)
 	right.add_child(_attrs_note)
 	var detail := _panel_of(_box(C_DETAIL, C_EDGE, 2, 6, 12))
@@ -777,10 +808,10 @@ func _refresh_resonance() -> void:
 	var info: Dictionary = EquipStore.suit
 	if info.is_empty():
 		# 还没拿到服务端数据：别急着说「未激活」，否则会误导（明明穿满了却显示没共鸣）。
-		_resonance_label.text = "品质共鸣： 读取中…"
+		_resonance_label.text = "读取中…"
 		return
 	if int(info.get("tier", 0)) <= 0:
-		_resonance_label.text = "品质共鸣： 未激活 （同品质 3 件起）"
+		_resonance_label.text = "未激活 （同品质 3 件起）"
 		return
 	var parts: Array = []
 	if float(info.get("all_pct", 0)) > 0:
@@ -805,7 +836,7 @@ func _refresh_resonance() -> void:
 	for k in extras:
 		parts.append("%s +%s%%" % [_suit_attr(str(k)), _pct_txt(extras[k])])
 	var tier_txt := "一档" if int(info.get("tier", 0)) == 1 else "二档"
-	_resonance_label.text = "品质共鸣： %s · %s %d 件 ｜ %s" % [
+	_resonance_label.text = "%s · %s %d 件 ｜ %s" % [
 		tier_txt, str(info.get("quality", "")), int(info.get("count", 0)), "  ".join(parts)]
 
 func _suit_attr(key: String) -> String:
@@ -925,10 +956,10 @@ func _refresh_detail() -> void:
 	var sep := HSeparator.new()
 	sep.add_theme_constant_override("separation", 8)
 	_bag_detail.add_child(sep)
-	_bag_detail.add_child(_label("数量    ×%d" % int(info.get("count", 0)), 14, C_INK, true))
+	_bag_detail.add_child(_kv_row("数量", "×%d" % int(info.get("count", 0))))
 	if info.has("sell"):
 		var sell := int(info.get("sell", 0))
-		_bag_detail.add_child(_label("售价    %s" % (("%d 金币" % sell) if sell > 0 else "不可出售"), 14, C_INK))
+		_bag_detail.add_child(_kv_row("售价", ("%d 金币" % sell) if sell > 0 else "不可出售"))
 		if sell > 0 and not bool(info.get("locked", false)):
 			var cap := maxi(int(info.get("count", 1)), 1)
 			# 换选中目标时数量回到 1，别把上个物品的份数带过来。
@@ -938,17 +969,18 @@ func _refresh_detail() -> void:
 			_sell_qty = clampi(_sell_qty, 1, cap)
 			_bag_detail.add_child(_build_sell_qty_row(sell, cap))
 	if bool(info.get("locked", false)):
-		_bag_detail.add_child(_label("状态    已锁定（禁止使用 / 出售）", 13, C_ACC))
+		var lock_row := _kv_row("状态", "已锁定（禁止使用 / 出售）", 13, 60)
+		_bag_detail.add_child(lock_row)
 	var category := str(info.get("category", ""))
 	if category == "" and info.has("slot"):
 		category = "装备 · %s" % str(info.get("slot", ""))
-	_bag_detail.add_child(_label("类别    %s" % (category if category != "" else "其他"), 14, C_INK))
+	_bag_detail.add_child(_kv_row("类别", category if category != "" else "其他"))
 	var stats: Dictionary = info.get("stats", {})
 	if not stats.is_empty():
 		var parts: Array = []
 		for k in stats:
 			parts.append("%s +%d" % [str(STAT_NAME.get(k, k)), int(stats[k])])
-		_bag_detail.add_child(_label("加成    %s" % " · ".join(parts), 13, C_INK))
+		_bag_detail.add_child(_kv_row("加成", " · ".join(parts), 13, 60))
 	var desc := str(info.get("desc", ""))
 	if desc != "":
 		var d := _label(desc, 12, C_MUTED)

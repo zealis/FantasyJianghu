@@ -212,7 +212,7 @@ func _run() -> void:
 		if (_layer._bag_ops[op] as Button).disabled:
 			_fail("%s 按钮应可用" % op)
 			return
-	if not bag_texts.contains("售价    5 金币"):
+	if not (bag_texts.contains("售价") and bag_texts.contains("5 金币")):
 		_fail("详情卡缺出售价: %s" % bag_texts)
 		return
 	# 出售数量选择器：默认 1 → 加到该格上限 3 时 ＋/全部 置灰 → 回 1 时 － 置灰。

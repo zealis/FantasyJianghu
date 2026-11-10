@@ -80,14 +80,12 @@ def check_suit(suit):
         over = [i for i, v in enumerate(tw["pct"]) if v > suit["tier2_main_pct"][i] / 2 + 1e-9]
         check("门派 %s 微调不超主项一半" % faction, not over, ("超限档位 " + str(over)) if over else "")
 
-    # 完美档同属性合计（配置表 §4）
+    # 完美档同属性合计（配置表 §4，V1.30 起二档**取代**一档、不叠全属性）
     perfect = 4
     combine = {}
 
     def total(faction, category):
         pct = {}
-        for a in suit["all_attrs"]:
-            pct[a] = pct.get(a, 0.0) + suit["tier1_all_pct"][perfect]
         sysdef = suit["systems"][category]
         for a in sysdef["main"]:
             pct[a] = pct.get(a, 0.0) + suit["tier2_main_pct"][perfect]
@@ -109,8 +107,14 @@ def check_suit(suit):
     check("完美档 符观封印命中 = 7 + 3 = 10%",
           approx(combine["缚灵符观"]["sealhit"], 10.0), str(combine["缚灵符观"]["sealhit"]))
     check("完美档 织梦谷只叠闪避（速度不叠主项）",
-          approx(combine["织梦谷"]["pdodge"], 3.0) and approx(combine["织梦谷"]["speed"], 14.0),
+          approx(combine["织梦谷"]["pdodge"], 3.0) and approx(combine["织梦谷"]["speed"], 9.0),
           "闪避 %s / 速度 %s" % (combine["织梦谷"]["pdodge"], combine["织梦谷"]["speed"]))
+    # V1.30 定案：5 件全同品质触发二档时只结算二档，不再叠加一档全属性。
+    leaked = [a for a in suit["all_attrs"]
+              if a not in suit["systems"]["物理"]["main"]
+              and a not in ("pcrit",) and combine["断岳剑宗"].get(a, 0.0) != 0.0]
+    check("二档取代一档（不再叠加全属性 +%s%%）" % suit["tier1_all_pct"][perfect],
+          not leaked, ("仍带全属性的项 " + str(leaked)) if leaked else "hp/mp/法攻等均未被抬")
 
     # 结构性检查：微调不得与系别主项同键（否则等于给主项加倍）
     for faction, tw in suit["faction_tweaks"].items():

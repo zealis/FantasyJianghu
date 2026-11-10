@@ -101,13 +101,13 @@ func TestPlayerUnitIncludesEquipAndResonance(t *testing.T) {
 	if err != nil {
 		t.Fatalf("playerUnit: %v", err)
 	}
-	// 物攻：(100 基线 + 10 装备) × (1 + 5% 全属性 + 9% 主项) = 125.4 → 125
-	if u.Stats.PAtk != 125 {
-		t.Fatalf("出场单位物攻应含装备与共鸣 = 125，实际 %d", u.Stats.PAtk)
+	// 物攻：(100 基线 + 10 装备) × 1.09（二档主项，取代一档全属性）= 119.9 → 120
+	if u.Stats.PAtk != 120 {
+		t.Fatalf("出场单位物攻应含装备与共鸣 = 120，实际 %d", u.Stats.PAtk)
 	}
-	// 气血：1000 × 1.05 = 1050
-	if u.Stats.HP != 1050 {
-		t.Fatalf("出场单位气血应含共鸣 = 1050，实际 %d", u.Stats.HP)
+	// 气血：二档不叠一档全属性 → 保持 1000
+	if u.Stats.HP != 1000 {
+		t.Fatalf("二档取代一档，气血应保持 1000，实际 %d", u.Stats.HP)
 	}
 	// 暴击：基线 0（本配置无 formula）+ 副项 3.5% + 微调 3% = 650
 	if u.Stats.PCrit != 650 {

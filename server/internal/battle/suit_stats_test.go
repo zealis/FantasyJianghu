@@ -69,8 +69,8 @@ func TestSuitResonanceDrivesStats(t *testing.T) {
 	if st.SealHit != 1000 {
 		t.Fatalf("封印命中应折算为 1000 万分制，实际 %d", st.SealHit)
 	}
-	// 速度：主项 9% + 全属性 5% = 14% → 200*1.14 = 228
-	if st.Speed != 228 {
-		t.Fatalf("速度应为 200*1.14=228，实际 %d", st.Speed)
+	// 二档取代一档：速度只吃主项 9% → 200*1.09 = 218（不再叠全属性 5%）。
+	if st.Speed != 218 {
+		t.Fatalf("速度应为 200*1.09=218，实际 %d", st.Speed)
 	}
 }

@@ -76,7 +76,7 @@ type SuitResult struct {
 //
 // 规则（配置表 §1，不改）：
 //   - 同品质 ≥3 件 → 一档（全属性 +tier1_all_pct[序数]）；
-//   - 五件全同品质 → 二档（另加系别主项 +tier2_main_pct[序数]、副项、八派微调）；
+//   - 五件全同品质 → 二档（**取代**一档：只结算系别主项 + 副项 + 八派微调，V1.30）；
 //   - 混品质只按件数最多的那一档结算，不多档叠加。
 //
 // qualities 允许含空串（空槽不计件）；category 为门派系别（物理/法术/封印/肉盾）。
@@ -111,8 +111,11 @@ func (d SuitData) SuitResonance(qualities []string, faction, category string) Su
 	if bestN < 5 {
 		return res
 	}
-	// 二档：一档全属性仍然生效，另叠加系别主副项与门派微调。
+	// 二档**取代**一档（V1.30 定案）：5 件全同品质只结算二档（系别主项 + 副项 + 门派微调），
+	// 不再叠加一档的全属性。叠加口径会让长局镜像恶化（数值模拟 report_v129），故不采。
 	res.Tier = 2
+	res.AllPct = 0
+	res.Percent = map[string]float64{}
 	if idx < len(d.Tier2MainPct) {
 		res.MainPct = d.Tier2MainPct[idx]
 	}

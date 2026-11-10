@@ -21,6 +21,9 @@ const C_ACC_DEEP := Color("B34A14")
 const C_HP := Color("60BA5C")
 const C_MP := Color("4A80B6")
 const C_BAR_BG := Color("D8CBA8")
+## 数值白色总则（UI 规范 §3，V1.31）：面板与指令台里的数值一律白色加粗，
+## 名称/标签保持墨色；战斗飘字不适用（按 §6 分色，另在 battle.gd 处理）。
+const C_VALUE := Color("FFFFFF")
 
 var _theme: Theme = preload("res://resources/theme_paper.tres")
 const AvatarFrames := preload("res://scripts/ui/avatar_frames.gd")
@@ -132,12 +135,14 @@ func _build_player_card() -> Control:
 	col.add_child(_name_label)
 	_hp_bar = _stat_bar(C_HP)
 	col.add_child(_hp_bar)
-	_hp_text = _stat_label()
-	col.add_child(_hp_text)
+	var hp_row := _stat_row("气血")
+	col.add_child(hp_row)
+	_hp_text = hp_row.get_child(1) as Label
 	_mp_bar = _stat_bar(C_MP)
 	col.add_child(_mp_bar)
-	_mp_text = _stat_label()
-	col.add_child(_mp_text)
+	var mp_row := _stat_row("真气")
+	col.add_child(mp_row)
+	_mp_text = mp_row.get_child(1) as Label
 	return card
 
 func _stat_bar(color: Color) -> ProgressBar:
@@ -156,12 +161,37 @@ func _stat_bar(color: Color) -> ProgressBar:
 	bar.add_theme_stylebox_override("background", back)
 	return bar
 
-func _stat_label() -> Label:
+## 数值标签：白色加粗 + 深褐胶囊底（V1.31 数值白色总则；米底上纯白发灰，需深底）。
+func _value_label(text: String, size: int) -> Label:
 	var l := Label.new()
-	l.text = "—"
-	l.add_theme_font_size_override("font_size", 14)
-	l.add_theme_color_override("font_color", C_INK_2)
+	l.text = text
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", C_VALUE)
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	var pill := StyleBoxFlat.new()
+	pill.bg_color = Color("3A2C1B")
+	pill.set_corner_radius_all(4)
+	pill.content_margin_left = 6
+	pill.content_margin_right = 6
+	pill.content_margin_top = 0
+	pill.content_margin_bottom = 0
+	l.add_theme_stylebox_override("normal", pill)
 	return l
+
+## 角色卡属性行：名称（次级色）+ 数值（白色加粗，V1.31 数值白色总则）。
+## 返回 HBox，数值 Label 固定在第 1 个子节点。
+func _stat_row(tag_text: String) -> HBoxContainer:
+	var hb := HBoxContainer.new()
+	hb.add_theme_constant_override("separation", 6)
+	var tag := Label.new()
+	tag.text = tag_text
+	tag.add_theme_font_size_override("font_size", 12)
+	tag.add_theme_color_override("font_color", C_INK_2)
+	tag.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hb.add_child(tag)
+	var val := _value_label("—", 14)
+	hb.add_child(val)
+	return hb
 
 ## 下排六键（定稿：秘籍为朱橙主按钮）。
 func _build_cmd_row() -> HBoxContainer:
@@ -256,10 +286,10 @@ func set_player(info: Dictionary) -> void:
 	var mp: float = float(info.get("mp", mp_max))
 	_hp_bar.max_value = hp_max
 	_hp_bar.value = hp
-	_hp_text.text = "气血 %d/%d" % [int(hp), int(hp_max)]
+	_hp_text.text = "%d/%d" % [int(hp), int(hp_max)]
 	_mp_bar.max_value = mp_max
 	_mp_bar.value = mp
-	_mp_text.text = "真气 %d/%d" % [int(mp), int(mp_max)]
+	_mp_text.text = "%d/%d" % [int(mp), int(mp_max)]
 	var f := SessionStore.faction if SessionStore.faction != "" else "断岳剑宗"
 	var g := SessionStore.gender if SessionStore.gender != "" else "男"
 	var path := "res://assets/avatars/%s_%s.png" % [f, g]
@@ -346,12 +376,14 @@ func _rebuild_cards() -> void:
 		card.add_theme_color_override("font_color", C_INK)
 		if i < usable.size():
 			var info: Dictionary = usable[i]
-			card.text = "%s   真气 %d" % [str(info.get("name", "?")), int(info.get("mp_cost", 0))]
 			var sid := str(info.get("id", ""))
 			var cost := int(info.get("mp_cost", 0))
-			if cost > int(_mp_bar.value):
+			var short := cost > int(_mp_bar.value)
+			# 卡片文字置空，改用三个标签分色：名字墨色、真气次级色、消耗数值白色加粗。
+			card.text = ""
+			_fill_skill_card(card, str(info.get("name", "?")), cost, short)
+			if short:
 				card.disabled = true
-				card.text += "  (不足)"
 			else:
 				card.pressed.connect(func() -> void: _submit("skill", sid))
 				_skill_cards.append(card)
@@ -362,6 +394,46 @@ func _rebuild_cards() -> void:
 	if usable.is_empty():
 		var first: Button = _card_row.get_child(0) as Button
 		first.text = "暂无可使用的秘籍"
+
+## 秘籍卡内容：名字（墨）＋ 真气（次级）＋ 消耗数值（白）。子控件不吞点击。
+func _fill_skill_card(card: Button, skill_name: String, cost: int, short: bool) -> void:
+	var row := HBoxContainer.new()
+	row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	row.offset_left = 10
+	row.offset_right = -8
+	row.add_theme_constant_override("separation", 5)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.add_child(row)
+	var nm := Label.new()
+	nm.text = skill_name
+	nm.add_theme_font_size_override("font_size", 12)
+	nm.add_theme_color_override("font_color", C_INK)
+	nm.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(nm)
+	var sp := Control.new()
+	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(sp)
+	var tag := Label.new()
+	tag.text = "真气"
+	tag.add_theme_font_size_override("font_size", 11)
+	tag.add_theme_color_override("font_color", C_INK_2)
+	tag.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(tag)
+	var val := _value_label(str(cost), 13)
+	val.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(val)
+	if short:
+		var warn := Label.new()
+		warn.text = "不足"
+		warn.add_theme_font_size_override("font_size", 10)
+		warn.add_theme_color_override("font_color", C_ACC_DEEP)
+		warn.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		warn.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(warn)
+		row.modulate = Color(1, 1, 1, 0.55)
 
 func _set_buttons_enabled(on: bool) -> void:
 	for b in _buttons:

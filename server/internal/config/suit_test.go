@@ -45,13 +45,17 @@ func TestSuitTier1OnlyAllAttrs(t *testing.T) {
 
 func TestSuitTier2StackWithSub(t *testing.T) {
 	d := realSuit(t)
-	// 断岳剑宗 5 件完美：全属性 +5%、物攻 +9%、暴击 3.5% + 微调 3% = 6.5%（配置表 §4）。
+	// 断岳剑宗 5 件完美：二档**取代**一档——只结算物攻 +9%、暴击 3.5% + 微调 3% = 6.5%，
+	// 不再叠加一档全属性 +5%（V1.30 定案）。
 	r := d.SuitResonance([]string{"完美", "完美", "完美", "完美", "完美"}, "断岳剑宗", "物理")
-	if r.Tier != 2 || !approx(r.AllPct, 5) || !approx(r.MainPct, 9) {
-		t.Fatalf("二档基础不符: %+v", r)
+	if r.Tier != 2 || !approx(r.AllPct, 0) || !approx(r.MainPct, 9) {
+		t.Fatalf("二档应为「取代」：AllPct=0 且主项 9%%，实际 %+v", r)
 	}
-	if !approx(r.Percent["patk"], 14) {
-		t.Fatalf("物攻应为全属性5%%+主项9%%=14%%，实际 %v", r.Percent["patk"])
+	if !approx(r.Percent["patk"], 9) {
+		t.Fatalf("物攻应为主项 9%%（不叠一档 5%%），实际 %v", r.Percent["patk"])
+	}
+	if _, has := r.Percent["hp"]; has {
+		t.Fatalf("二档不应再带一档的全属性（hp 不应出现）：%v", r.Percent)
 	}
 	if !approx(r.Percent["pcrit"], 6.5) || !approx(r.TweakPct, 3) {
 		t.Fatalf("剑宗暴击应为副项3.5%%+微调3%%=6.5%%，实际 %v (tweak=%v)", r.Percent["pcrit"], r.TweakPct)
@@ -65,8 +69,8 @@ func TestSuitSealHitTenPercent(t *testing.T) {
 	if !approx(r.Percent["sealhit"], 10) {
 		t.Fatalf("符观封印命中应为 10%%，实际 %v", r.Percent["sealhit"])
 	}
-	if !approx(r.Percent["speed"], 14) {
-		t.Fatalf("封印系主项为速度 9%%+全属性5%%=14%%，实际 %v", r.Percent["speed"])
+	if !approx(r.Percent["speed"], 9) {
+		t.Fatalf("封印系主项为速度 9%%（二档取代一档），实际 %v", r.Percent["speed"])
 	}
 }
 
@@ -80,8 +84,8 @@ func TestSuitZhimengDodgeOnly(t *testing.T) {
 	if !approx(r.Percent["sealhit"], 7) {
 		t.Fatalf("织梦谷封印命中只吃副项 7%%，实际 %v", r.Percent["sealhit"])
 	}
-	if !approx(r.Percent["speed"], 14) {
-		t.Fatalf("速度应为 9%%+5%%=14%%，实际 %v", r.Percent["speed"])
+	if !approx(r.Percent["speed"], 9) {
+		t.Fatalf("速度应为主项 9%%（不叠一档），实际 %v", r.Percent["speed"])
 	}
 }
 

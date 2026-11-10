@@ -240,16 +240,16 @@ func TestViewSuitResonanceTier2(t *testing.T) {
 		t.Fatalf("断岳剑宗微调应为 3%%: %+v", suit["tweak_pct"])
 	}
 	attrs := out["attrs"].(map[string]any)
-	// 物攻：(100 基线 + 10 装备) × (1 + 5% 全属性 + 9% 主项) = 110 × 1.14 = 125.4 → 125
-	if got := attrs["patk"].(int); got != 125 {
-		t.Fatalf("物攻应为 125（含装备与共鸣），实际 %d", got)
+	// 物攻：(100 基线 + 10 装备) × 1.09（二档主项，取代一档全属性）= 119.9 → 120
+	if got := attrs["patk"].(int); got != 120 {
+		t.Fatalf("物攻应为 120（含装备与共鸣），实际 %d", got)
 	}
 	// 暴击：本测试未配 formula.crit.base_rate，基线为 0；副项 3.5% + 微调 3% = 6.5% → 650 万分制。
 	if got := attrs["crit"].(int); got != 650 {
 		t.Fatalf("暴击应为 650 万分制（6.5%%），实际 %d", got)
 	}
-	// 气血：1000 × 1.05 = 1050（无装备气血）
-	if got := attrs["hp"].(int); got != 1050 {
-		t.Fatalf("气血应为 1000×1.05=1050，实际 %d", got)
+	// 气血：二档不叠一档全属性 → 保持 1000
+	if got := attrs["hp"].(int); got != 1000 {
+		t.Fatalf("二档取代一档，气血应保持 1000，实际 %d", got)
 	}
 }

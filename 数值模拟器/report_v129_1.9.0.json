@@ -1,48 +1,24 @@
 {
   "config_version": "1.9.0",
-  "checked": 49,
+  "checked": 50,
   "failed": 0,
   "verdict": "PASS",
   "seal_calibration": "PASS",
   "perfect_tier_totals": {
     "断岳剑宗": {
-      "hp": 5.0,
-      "mp": 5.0,
-      "patk": 14.0,
-      "matk": 5.0,
-      "pdef": 5.0,
-      "mdef": 5.0,
-      "speed": 5.0,
+      "patk": 9.0,
       "pcrit": 6.5
     },
     "惊雷殿": {
-      "hp": 5.0,
-      "mp": 5.0,
-      "patk": 5.0,
-      "matk": 14.0,
-      "pdef": 5.0,
-      "mdef": 5.0,
-      "speed": 5.0,
+      "matk": 9.0,
       "mcrit": 6.5
     },
     "缚灵符观": {
-      "hp": 5.0,
-      "mp": 5.0,
-      "patk": 5.0,
-      "matk": 5.0,
-      "pdef": 5.0,
-      "mdef": 5.0,
-      "speed": 14.0,
+      "speed": 9.0,
       "sealhit": 10.0
     },
     "织梦谷": {
-      "hp": 5.0,
-      "mp": 5.0,
-      "patk": 5.0,
-      "matk": 5.0,
-      "pdef": 5.0,
-      "mdef": 5.0,
-      "speed": 14.0,
+      "speed": 9.0,
       "sealhit": 7.0,
       "pdodge": 3.0
     }
@@ -290,7 +266,12 @@
     {
       "item": "完美档 织梦谷只叠闪避（速度不叠主项）",
       "ok": true,
-      "detail": "闪避 3.0 / 速度 14.0"
+      "detail": "闪避 3.0 / 速度 9.0"
+    },
+    {
+      "item": "二档取代一档（不再叠加全属性 +5.0%）",
+      "ok": true,
+      "detail": "hp/mp/法攻等均未被抬"
     },
     {
       "item": "门派 断岳剑宗 微调不落在系别主项上（物理）",
@@ -335,7 +316,7 @@
     {
       "item": "套装加成合计未突破乘区上限 2.25",
       "ok": true,
-      "detail": "峰值 +14.0%（系数 1.14）"
+      "detail": "峰值 +10.0%（系数 1.10）"
     },
     {
       "item": "胜场分档与文档一致（10/30/60/100 → 1/2/3/4%）",

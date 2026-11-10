@@ -45,6 +45,7 @@ var _unspent := 0
 var _preset_idx := 0
 
 var _avail_label: Label
+var _bold: FontVariation = null
 var _name_label: Label
 var _sub_label: Label
 var _title_label: Label
@@ -92,12 +93,49 @@ func _paper(bg: Color = C_PAPER_2) -> Panel:
 	p.add_theme_stylebox_override("panel", _panel_style(bg, C_EDGE))
 	return p
 
+## 数值白色总则（UI 规范 §3，V1.31）：面板数值一律白色加粗，标签保持墨色/次级色。
+const C_VALUE := Color("FFFFFF")
+
 func _label(text: String, size: int, color: Color = C_INK) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", color)
 	return l
+
+## 数值标签：白色加粗 + 深褐胶囊底（宣纸米底上纯白发灰，必须给深底才可读）。
+func _value_label(text: String, size: int) -> Label:
+	var l := _label(text, size, C_VALUE)
+	l.add_theme_font_override("font", _bold_font())
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# 不被 HBox 拉伸：按内容宽度收在右侧，避免变成一大块黑条。
+	l.size_flags_horizontal = Control.SIZE_SHRINK_END
+	l.add_theme_stylebox_override("normal", _pill_style())
+	return l
+
+## 胶囊底（数值专用，深褐 + 小圆角 + 左右留白）。
+func _pill_style() -> StyleBoxFlat:
+	var pill := StyleBoxFlat.new()
+	pill.bg_color = Color("3A2C1B")
+	pill.set_corner_radius_all(4)
+	pill.content_margin_left = 7
+	pill.content_margin_right = 7
+	pill.content_margin_top = 1
+	pill.content_margin_bottom = 1
+	return pill
+
+## 空值不画胶囊（否则是一块纯黑方块）。
+func _pill_on(l: Label, on: bool) -> void:
+	l.add_theme_stylebox_override("normal", _pill_style() if on else StyleBoxEmpty.new())
+
+## 加粗字体（惰性构造，面板内多处数值共用）。
+func _bold_font() -> FontVariation:
+	if _bold == null:
+		_bold = FontVariation.new()
+		_bold.base_font = ThemeDB.fallback_font
+		_bold.variation_embolden = 0.6
+	return _bold
 
 func _button(text: String, primary: bool = false) -> Button:
 	var b := Button.new()
@@ -237,7 +275,7 @@ func _build_left() -> Control:
 	var asp := Control.new()
 	asp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	avail.add_child(asp)
-	_avail_label = _label("0", 30, C_ACC)
+	_avail_label = _value_label("0", 30)
 	avail.add_child(_avail_label)
 	var wash := _button("洗点", false)
 	wash.custom_minimum_size = Vector2(72, 30)
@@ -318,7 +356,7 @@ func _attr_row(def: Dictionary) -> Control:
 	left.add_child(_label(str(def["name"]), 16, C_INK))
 	left.add_child(_label("每点：" + str(def["gain"]), 11, C_MUTED))
 
-	var val := _label("0", 30, C_INK)
+	var val := _value_label("0", 30)
 	val.custom_minimum_size = Vector2(52, 0)
 	val.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	val.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -369,7 +407,7 @@ func _build_right() -> Control:
 		var nl := _label(str(row["name"]), 13, C_MUTED)
 		nl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		h.add_child(nl)
-		var now := _label("--", 14, C_INK)
+		var now := _value_label("--", 14)
 		now.custom_minimum_size = Vector2(64, 0)
 		now.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		h.add_child(now)
@@ -378,7 +416,7 @@ func _build_right() -> Control:
 		arrow.custom_minimum_size = Vector2(18, 0)
 		arrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		h.add_child(arrow)
-		var after := _label("", 14, C_GOOD)
+		var after := _value_label("", 14)
 		after.custom_minimum_size = Vector2(64, 0)
 		after.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		h.add_child(after)
@@ -530,7 +568,9 @@ func _sync() -> void:
 		var pend := int(_pending[key])
 		var val: Label = _value_labels[key]
 		val.text = str(cur + pend)
-		val.add_theme_color_override("font_color", C_ACC if pend > 0 else C_INK)
+		# 数值白色总则：主数值始终白色，预加量由右侧橙色「+n」表达。
+		val.add_theme_color_override("font_color", C_VALUE)
+		_pill_on(val, true)
 		var plus: Button = _plus_buttons[key]
 		plus.disabled = used >= _unspent
 		var minus: Button = _minus_buttons[key]
@@ -549,6 +589,8 @@ func _sync() -> void:
 			now.text = "--"
 			after.text = ""
 			dl.text = ""
+			_pill_on(now, true)
+			_pill_on(after, false)
 			continue
 		now.text = _fmt(key, base)
 		if delta > 0:
@@ -557,6 +599,8 @@ func _sync() -> void:
 		else:
 			after.text = ""
 			dl.text = ""
+		_pill_on(now, true)
+		_pill_on(after, after.text != "")
 
 	for i in range(_preset_buttons.size()):
 		var b: Button = _preset_buttons[i]
