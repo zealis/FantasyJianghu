@@ -9,9 +9,12 @@ var move_speed := 40.0
 var idle_min := 3.0
 var idle_max := 4.0
 var move_time := 1.0
+## 击杀后原区重刷间隔（V1.43：击杀后按配置间隔在原区重刷）。
+var respawn_seconds := 30.0
 ## 接触开战的 monster_id（由地图逻辑数据注入；空则不触发，独立试点保持纯展示）。
 var battle_monster := ""
 var _cooldown := 0.0
+var _respawn_left := 0.0
 var _main: Node = null
 var origin_x := 0.0
 var dir := 1.0
@@ -25,6 +28,14 @@ func _ready() -> void:
 	_timer = randf_range(idle_min, idle_max)
 
 func _process(delta: float) -> void:
+	# 被击杀后隐藏并在原区倒计时重刷；期间不移动、不触发接触开战。
+	if _respawn_left > 0.0:
+		_respawn_left -= delta
+		if _respawn_left <= 0.0:
+			_respawn_left = 0.0
+			visible = true
+			_cooldown = 1.0
+		return
 	_check_encounter(delta)
 	if not _moving:
 		_timer -= delta
@@ -53,8 +64,23 @@ func _check_encounter(delta: float) -> void:
 		return
 	if _main == null or not _main.has_method("enter_battle"):
 		return
+	# 双保险：主控已在一场战斗中（主世界被停用，理论上本函数不会跑）时不再触发。
+	if bool(_main.get("_in_battle")):
+		return
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player == null or global_position.distance_to(player.global_position) > 44.0:
 		return
 	_cooldown = 4.0
 	_main.call("enter_battle", {"monster_id": battle_monster})
+
+## 战斗结束回调（由 main._settle_world_monsters 调用）。
+## 胜利：本怪消失，按 respawn_seconds 在原区重刷；失败/脱离：保留，短冷却后可再生效。
+func on_battle_result(won: bool) -> void:
+	if won:
+		visible = false
+		_respawn_left = maxf(0.1, respawn_seconds)
+		_moving = false
+		_timer = 0.0
+		_cooldown = 0.0
+	else:
+		_cooldown = 5.0

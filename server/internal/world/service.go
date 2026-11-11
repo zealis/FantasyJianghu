@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 
+	"fantasy-jianghu/server/internal/config"
 	"fantasy-jianghu/server/internal/protocol"
 	"fantasy-jianghu/server/internal/session"
 )
@@ -187,6 +188,63 @@ func (s *Service) HandleMove(ctx context.Context, sess *session.Session, payload
 		s.hub.SendTo(o.Token, 3, protocol.SubMoveBroadcast, map[string]any{"id": p.CharID, "x": p.X, "y": p.Y})
 	}
 	return map[string]any{"x": p.X, "y": p.Y}, codeOK, ""
+}
+
+// HandleTeleport 处理 WS 3/9 传送点交互（文档 §4「交互 / 整图加载」条）。
+// 客户端只上报 portal_id，落点一律从服务端场景配置读取，不接受客户端坐标：
+// 这样既防篡改，也不会被 3/2 的防瞬移钳制拉回（传送是权威跃迁，不是移动）。
+// target_map 为空或目标场景尚未出图时执行同图定点传送；成功后写盘并广播 3/3。
+func (s *Service) HandleTeleport(ctx context.Context, sess *session.Session, payload map[string]any) (map[string]any, int, string) {
+	if sess == nil || sess.CharID == 0 {
+		return nil, codeUnauthorized, "未鉴权或未选角"
+	}
+	id, _ := payload["portal_id"].(string)
+	if id == "" {
+		return nil, codeGeneric, "传送点 id 为空"
+	}
+	scene := s.locate(sess.CharID)
+	if scene == nil {
+		return nil, codeGeneric, "不在场景中"
+	}
+	var portal *config.ScenePortal
+	for i := range scene.Logic.Portals {
+		if scene.Logic.Portals[i].ID == id {
+			portal = &scene.Logic.Portals[i]
+			break
+		}
+	}
+	if portal == nil {
+		return nil, codeGeneric, "传送点不存在"
+	}
+	// 预留：独立场景出图后，target_map 指向已配置场景时改走 3/1 换图流程；
+	// 当前只有清河村一张图，一律按同图定点传送处理。
+	ymin, ymax := scene.Logic.YBounds()
+	x := clamp(portal.ToX, scene.Logic.Walk.XMin, scene.Logic.Walk.XMax)
+	y := clamp(portal.ToY, ymin, ymax)
+
+	scene.mu.Lock()
+	p, ok := scene.players[sess.CharID]
+	if !ok {
+		scene.mu.Unlock()
+		return nil, codeGeneric, "不在场景中"
+	}
+	p.X, p.Y = x, y
+	p.LastMove = s.now()
+	p.dirty = true
+	for _, o := range scene.players {
+		if o.CharID == p.CharID {
+			continue
+		}
+		s.hub.SendTo(o.Token, 3, protocol.SubMoveBroadcast,
+			map[string]any{"id": p.CharID, "x": x, "y": y})
+	}
+	scene.mu.Unlock()
+
+	if err := s.characters.UpdatePosition(ctx, p.CharID, scene.Logic.MapID, x, y); err != nil {
+		return nil, codeGeneric, "位置落盘失败"
+	}
+	log.Printf("teleport char=%d portal=%s -> (%.1f,%.1f) map=%s", p.CharID, portal.Name, x, y, scene.Logic.MapID)
+	return map[string]any{"x": x, "y": y, "map_id": scene.Logic.MapID, "portal": portal.Name}, codeOK, ""
 }
 
 // HandleLeave 处理 WS 3/4 离场帧：移除、落盘、广播。

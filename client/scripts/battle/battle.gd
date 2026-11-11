@@ -84,6 +84,8 @@ var _acked_turn := -1
 var _result_label: Label
 var _battle_id := ""
 var _battle_over := false
+## 最近一场结果：0 胜 / 1 负 / -1 脱离。battle_over 信号不带参，主控据此结算地图明雷。
+var last_winner := -1
 var _target_id := 0
 var _pending_cmd := {}  # 4v4 待选目标：{cmd, skill_id}
 var _last_cmd_payload := {}  # 最近一次真正发出的 4/2 负载（调试与冒烟断言）
@@ -1085,6 +1087,7 @@ func _show_result(winner: int) -> void:
 	if _result_label:
 		return
 	_battle_over = true
+	last_winner = winner
 	_result_label = Label.new()
 	_result_label.text = "战斗胜利" if winner == 0 else ("战斗失败" if winner == 1 else "脱离战斗")
 	_result_label.add_theme_font_size_override("font_size", 36)

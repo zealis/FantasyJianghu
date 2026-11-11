@@ -136,6 +136,7 @@ func buildServer(opts Options) (*ServerHandle, error) {
 	rt.Register(protocol.MainWorld, protocol.SubLeave, worldSvc.HandleLeave)
 	rt.Register(protocol.MainWorld, protocol.SubLineList, worldSvc.HandleLineList)
 	rt.Register(protocol.MainWorld, protocol.SubSwitchLine, worldSvc.HandleSwitchLine)
+	rt.Register(protocol.MainWorld, protocol.SubTeleport, worldSvc.HandleTeleport)
 	rt.Register(protocol.MainCode4, protocol.SubBattleEnter, battleSvc.HandleEnter)
 	rt.Register(protocol.MainCode4, protocol.SubBattleCmd, battleSvc.HandleCmd)
 	rt.Register(protocol.MainCode4, protocol.SubBattleAck, battleSvc.HandleAck)

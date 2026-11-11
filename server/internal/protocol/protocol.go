@@ -3,15 +3,15 @@ package protocol
 
 // 主码按开发技术规范 §5.1 登记制分配；新增系统先登记后开发。
 const (
-	MainCode1 = 1
-	MainCode2 = 2
-	MainCode3 = 3
-	MainCode4 = 4
-	MainCode5 = 5
-	MainCode6 = 6
-	MainCode7 = 7
-	MainCode8 = 8
-	MainCode9 = 9
+	MainCode1  = 1
+	MainCode2  = 2
+	MainCode3  = 3
+	MainCode4  = 4
+	MainCode5  = 5
+	MainCode6  = 6
+	MainCode7  = 7
+	MainCode8  = 8
+	MainCode9  = 9
 	MainCode10 = 10
 	MainCode11 = 11
 	MainCode12 = 12
@@ -38,60 +38,61 @@ const (
 	SubKick = 1
 	SubPing = 0
 	// 主码 2 账号/角色
-	SubAuth = 1
-	SubCharAllocate = 5
+	SubAuth             = 1
+	SubCharAllocate     = 5
 	SubCharBreakthrough = 4
-	SubCharCreate = 2
-	SubCharResetPoints = 6
-	SubCharSelect = 3
+	SubCharCreate       = 2
+	SubCharResetPoints  = 6
+	SubCharSelect       = 3
 	// 主码 3 世界/地图/移动
-	SubEnterScene = 1
-	SubLeave = 4
+	SubEnterScene     = 1
+	SubLeave          = 4
 	SubLeaveBroadcast = 5
-	SubLineList = 7
-	SubMove = 2
-	SubMoveBroadcast = 3
-	SubPlayerJoin = 6
-	SubSwitchLine = 8
+	SubLineList       = 7
+	SubMove           = 2
+	SubMoveBroadcast  = 3
+	SubPlayerJoin     = 6
+	SubSwitchLine     = 8
+	SubTeleport       = 9 // 传送点交互（落点由服务端场景配置决定）
 	// 主码 4 战斗
-	SubBattleAck = 4
-	SubBattleCmd = 2
-	SubBattleEnter = 1
-	SubBattleFrame = 3
-	SubBattleLeave = 6
+	SubBattleAck     = 4
+	SubBattleCmd     = 2
+	SubBattleEnter   = 1
+	SubBattleFrame   = 3
+	SubBattleLeave   = 6
 	SubBattleRestore = 7
-	SubBattleResult = 5
+	SubBattleResult  = 5
 	// 主码 5 背包/物品
 	SubBagList = 1
 	SubBagLock = 5
 	SubBagSell = 4
 	SubBagSort = 3
-	SubBagUse = 2
+	SubBagUse  = 2
 	// 主码 6 装备/强化
 	SubEquipRemove = 2
-	SubEquipView = 3
-	SubEquipWear = 1
+	SubEquipView   = 3
+	SubEquipWear   = 1
 	// 主码 10 NPC/商店
 	SubNpcTalk = 1
 	// 主码 11 任务
-	SubQuestAccept = 2
-	SubQuestDaily = 5
-	SubQuestList = 1
+	SubQuestAccept   = 2
+	SubQuestDaily    = 5
+	SubQuestList     = 1
 	SubQuestProgress = 4
-	SubQuestSubmit = 3
+	SubQuestSubmit   = 3
 )
 
 // MainCodeNames 主码→系统名（登记表副本）。
 var MainCodeNames = map[uint16]string{
-	1: "系统/心跳/踢下线",
-	2: "账号/角色",
-	3: "世界/地图/移动",
-	4: "战斗",
-	5: "背包/物品",
-	6: "装备/强化",
-	7: "法宝",
-	8: "命魂/神魂",
-	9: "队伍",
+	1:  "系统/心跳/踢下线",
+	2:  "账号/角色",
+	3:  "世界/地图/移动",
+	4:  "战斗",
+	5:  "背包/物品",
+	6:  "装备/强化",
+	7:  "法宝",
+	8:  "命魂/神魂",
+	9:  "队伍",
 	10: "NPC/商店",
 	11: "任务",
 	12: "活动",

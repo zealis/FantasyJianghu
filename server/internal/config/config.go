@@ -32,22 +32,24 @@ type Spawn struct {
 
 // SceneLogic 为"场景图与路径/热区逻辑数据分离"的服务端逻辑数据（§4 world）。
 type SceneLogic struct {
-	MapID     string          `json:"map_id"`
-	Type      string          `json:"type"` // town|wild|sect|activity（V1.27 分线类型）
-	Texture   string          `json:"texture"`
-	Width     float64         `json:"width"`
-	Height    float64         `json:"height"`
-	GroundY   float64         `json:"ground_y"`
-	SpawnX    float64         `json:"spawn_x"`
-	SpawnY    float64         `json:"spawn_y"`
+	MapID   string  `json:"map_id"`
+	Type    string  `json:"type"` // town|wild|sect|activity（V1.27 分线类型）
+	Texture string  `json:"texture"`
+	Width   float64 `json:"width"`
+	Height  float64 `json:"height"`
+	GroundY float64 `json:"ground_y"`
+	SpawnX  float64 `json:"spawn_x"`
+	SpawnY  float64 `json:"spawn_y"`
 	// LegacyGroundY 为旧横版地图的 ground_y；存档 y 恰等于它时视为过期坐标，
 	// 进场自动迁移到二维出生点（俯视改造用，0 表示不做迁移）。
-	LegacyGroundY float64 `json:"legacy_ground_y"`
-	Walk      WalkRange       `json:"walk"`
-	Camera    CameraRange     `json:"camera"`
-	NPCs      []SceneNPC      `json:"npcs"`
-	Buildings []SceneBuilding `json:"buildings"`
-	Dialogues map[string]any  `json:"dialogues"`
+	LegacyGroundY float64         `json:"legacy_ground_y"`
+	Walk          WalkRange       `json:"walk"`
+	Camera        CameraRange     `json:"camera"`
+	NPCs          []SceneNPC      `json:"npcs"`
+	Buildings     []SceneBuilding `json:"buildings"`
+	// Portals 为传送点热区：客户端只发 portal_id，落点一律取服务端配置（防篡改坐标）。
+	Portals   []ScenePortal  `json:"portals"`
+	Dialogues map[string]any `json:"dialogues"`
 }
 
 type WalkRange struct {
@@ -73,6 +75,19 @@ type SceneNPC struct {
 type SceneBuilding struct {
 	Name string  `json:"name"`
 	X    float64 `json:"x"`
+}
+
+// ScenePortal 传送点：x/y 为热区位置，to_x/to_y 为同图落点；
+// target_map 预留给独立野外/室内场景出图后的跨场景切换（空 = 同图定点传送）。
+type ScenePortal struct {
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	X         float64 `json:"x"`
+	Y         float64 `json:"y"`
+	ToX       float64 `json:"to_x"`
+	ToY       float64 `json:"to_y"`
+	TargetMap string  `json:"target_map"`
+	Note      string  `json:"note,omitempty"`
 }
 
 // FactionInfo 为八派明细（GDD §5.3 定案表逐字转录，宗门卡片唯一来源）。
@@ -208,6 +223,16 @@ func Validate(d Data) error {
 				return fmt.Errorf("场景 %s NPC id 空/重复: %q", s.MapID, n.ID)
 			}
 			ids[n.ID] = true
+		}
+		pids := map[string]bool{}
+		for _, pt := range s.Portals {
+			if pt.ID == "" || pids[pt.ID] {
+				return fmt.Errorf("场景 %s 传送点 id 空/重复: %q", s.MapID, pt.ID)
+			}
+			pids[pt.ID] = true
+			if pt.ToX < s.Walk.XMin || pt.ToX > s.Walk.XMax || pt.ToY < ymin || pt.ToY > ymax {
+				return fmt.Errorf("场景 %s 传送点 %q 落点越界: (%.0f, %.0f)", s.MapID, pt.ID, pt.ToX, pt.ToY)
+			}
 		}
 	}
 	// 任务/物品域引用完整性（须在场景与战斗域校验之后）。

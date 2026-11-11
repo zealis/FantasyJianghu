@@ -48,6 +48,7 @@ const SUB_MOVE := 2
 const SUB_MOVE_BROADCAST := 3
 const SUB_PLAYER_JOIN := 6
 const SUB_SWITCH_LINE := 8
+const SUB_TELEPORT := 9
 ## 主码 4 战斗
 const SUB_BATTLE_ACK := 4
 const SUB_BATTLE_CMD := 2

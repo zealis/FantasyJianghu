@@ -42,6 +42,16 @@ func _ready() -> void:
 	world_img.save_png("D:/project/Fantasy-Jianghu/client/tests/live_world.png")
 	print("[live] saved live_world.png ", world_img.get_size())
 
+	# 门洞热区交互：主流程下触发应打开门内对话（DialoguePanel 按 dialogue key 渲染）。
+	# 只验 UI，不发 3/9（服务端权威传送已由 Go 端到端用例覆盖，避免改动探针角色存档）。
+	var dlg := main.get_node("DialogueLayer/DialoguePanel")
+	WorldStore.request_hotspot("door_dazhai")
+	await _frames(3)
+	print("[live] door dialogue visible=", dlg.visible)
+	if not dlg.visible:
+		printerr("[live] 门洞热区未打开门内对话")
+	dlg.visible = false
+
 	var battle: Control = main.get_node("BattleCanvas/BattleLayer")
 	print("[live] A vp=", get_viewport().get_visible_rect().size, " battle=", battle.size, " win=", get_window().size)
 	main.enter_battle({"monster_id": "muzhuang"})
@@ -53,6 +63,30 @@ func _ready() -> void:
 	var img := get_viewport().get_texture().get_image()
 	img.save_png(OUT)
 	print("[live] saved ", OUT, " ", img.get_size())
+
+	# 战斗中主世界必须停用（否则玩家能「看不见地走路」、明雷 4s 冷却会重复开战）。
+	var wnode := main.get_node("World")
+	print("[live] battle lock=", main.get("_in_battle"), " world_mode=", wnode.process_mode,
+		"（应 true / ", Node.PROCESS_MODE_DISABLED, "）")
+	if not bool(main.get("_in_battle")) or wnode.process_mode != Node.PROCESS_MODE_DISABLED:
+		printerr("[live] 战斗中主世界未停用或重入锁未生效")
+	# 重入：再次请求进战斗应被锁挡住，不新开一场（否则表现为残血回满）。
+	var first_battle_id := str(battle.get("_battle_id"))
+	main.call("enter_battle", {"monster_id": "muzhuang"})
+	await _frames(3)
+	if str(battle.get("_battle_id")) != first_battle_id:
+		printerr("[live] 战斗重入锁失效：重复 4/1 又开了一场战斗")
+
+	# 3/9 传送点：走 world 层的联网分支（_in_main=true / Network.offline=false），
+	# 验证客户端协议常量、服务端权威落点与 on_teleported 不被 3/2 纠偏拉回。
+	var world_node := main.get_node("World")
+	var player_node := world_node.get_node_or_null("YSortLayer/Player")
+	WorldStore.request_hotspot("field_gate")
+	await _frames(12)
+	print("[live] 3/9 teleport player=", player_node.position if player_node else "nil",
+		" (应 1500,700)")
+	if player_node != null and (player_node as Node2D).position.distance_to(Vector2(1500, 700)) > 2.0:
+		printerr("[live] 传送点未落到服务端权威坐标")
 	get_tree().quit(0)
 
 func _frames(n: int) -> void:

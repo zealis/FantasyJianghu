@@ -9,19 +9,22 @@ extends Node2D
 ##    这样屋顶、桥拱洞口、下游河面天然都在障碍内，不必再单独描岸线或墙基线；
 ##  - 精灵间 Y-Sort（按脚底 y），整图底图不参与排序；
 ##  - 镜头 zoom 1.6、禁止整图同屏；人物 62 图内 px（门洞 ×0.9）、移速 200 px/s。
-## 未接入（下一阶段）：点按避碰撞寻路、服务端 x/y 校验、NPC 对话与任务、主流程切换。
+## 已接入：NPC 对话与任务、明雷接触开战、服务端 x/y 二维同步、同屏远端玩家、
+## 门洞 / 传送点热区交互。未接入（下一阶段）：点按避碰撞寻路、门内/野外独立场景出图。
 
 ## 逻辑数据默认走 v7；场景可用 metadata/logic_path 指向其它版本（如扩张版 v8）。
 const DEFAULT_LOGIC := "res://data/qinghecun_v7_logic.json"
 const MonsterScript := preload("res://scripts/game/topdown_monster.gd")
 const NpcScript := preload("res://scripts/game/topdown_npc.gd")
 const RemotePlayerScript := preload("res://scripts/game/remote_player.gd")
+const HotspotScript := preload("res://scripts/game/topdown_hotspot.gd")
 
 var logic: Dictionary = {}
 var _hint: Label
 var _in_main := false
 var _remote_nodes := {}
 var _logic_path := DEFAULT_LOGIC
+var _activating := false
 
 func _ready() -> void:
 	_logic_path = str(get_meta("logic_path", DEFAULT_LOGIC))
@@ -74,18 +77,86 @@ func _build_interactions() -> void:
 		layer = Node2D.new()
 		layer.name = "Interactions"
 		add_child(layer)
+	# 门洞与传送点统一走通用热区组件：名牌常驻、走近浮现进入钮，交互由 JSON 驱动。
 	for raw in logic.get("interactions", []):
-		var z: Dictionary = raw
-		var area := Area2D.new()
-		area.name = "Door_" + str(z.get("name", ""))
-		var door: Array = z.get("door", [0, 0])
-		area.position = Vector2(float(door[0]), float(door[1]))
-		var shape := CollisionShape2D.new()
-		var circ := CircleShape2D.new()
-		circ.radius = float(z.get("radius", 60))
-		shape.shape = circ
-		area.add_child(shape)
-		layer.add_child(area)
+		_spawn_hotspot(layer, raw as Dictionary, "door")
+	for raw in logic.get("portals", []):
+		_spawn_hotspot(layer, raw as Dictionary, "portal")
+	WorldStore.hotspot_requested.connect(_activate_hotspot)
+
+func _spawn_hotspot(layer: Node2D, z: Dictionary, kind: String) -> void:
+	var area := Area2D.new()
+	var id := str(z.get("id", ""))
+	area.name = ("Door_" if kind == "door" else "Portal_") + str(z.get("name", id))
+	area.set_script(HotspotScript)
+	var xy: Array = z.get("door", [0, 0]) if kind == "door" else [z.get("x", 0), z.get("y", 0)]
+	area.position = Vector2(float(xy[0]), float(xy[1]))
+	var shape := CollisionShape2D.new()
+	var circ := CircleShape2D.new()
+	circ.radius = float(z.get("radius", 60))
+	shape.shape = circ
+	area.add_child(shape)
+	# set_script 后、add_child 前注入配置，保证 _ready() 读到最终值。
+	area.set("kind", kind)
+	area.set("hotspot_id", id)
+	area.set("label", str(z.get("name", "")))
+	area.set("radius", float(z.get("radius", 60)))
+	area.set("dialogue_key", str(z.get("dialogue", "")))
+	area.set("portal_id", str(z.get("portal_id", id)))
+	var to: Array = z.get("to", [])
+	if to.size() >= 2:
+		area.set("to", Vector2(float(to[0]), float(to[1])))
+	layer.add_child(area)
+	area.activated.connect(_activate_hotspot)
+
+## 交互分发：门洞开「门内对话」，传送点走 3/9 服务端权威落点。
+func _activate_hotspot(hotspot_id: String) -> void:
+	if _activating:
+		return
+	var layer := get_node_or_null("Interactions") as Node2D
+	if layer == null:
+		return
+	for c in layer.get_children():
+		if not (c is Area2D) or str(c.get("hotspot_id")) != hotspot_id:
+			continue
+		_activating = true
+		if str(c.get("kind")) == "portal":
+			await _teleport(c as Area2D)
+		else:
+			var key := str(c.get("dialogue_key"))
+			if key != "":
+				# DialoguePanel 支持直接按 dialogue key 打开（门内对话不是 NPC）。
+				WorldStore.request_dialogue(key)
+		_activating = false
+		return
+
+## 传送点：主流程走 3/9（服务端配置落点 + 落盘 + 3/3 广播）；
+## 独立冒烟/实拍不联网，按 JSON 的 to 做本地落点，便于验证交互链路。
+func _teleport(node: Area2D) -> void:
+	var p := get_node_or_null("YSortLayer/Player") as CharacterBody2D
+	if p == null:
+		return
+	var local_to := node.get("to") as Vector2
+	if Network.offline or not _in_main:
+		if local_to != Vector2.ZERO:
+			p.call("on_teleported", local_to)
+			_refresh_hint()
+		return
+	var resp: Dictionary = await Network.send_and_wait(3, Protocol.SUB_TELEPORT,
+			{"portal_id": str(node.get("portal_id"))})
+	if int(resp.get("code", -1)) != 0:
+		_toast(str(resp.get("msg", "传送失败，请稍后再试")))
+		return
+	var pos := Vector2(float(resp.get("x", local_to.x)), float(resp.get("y", local_to.y)))
+	p.call("on_teleported", pos)
+	_refresh_hint()
+
+func _toast(msg: String) -> void:
+	var main := get_tree().root.find_child("Main", true, false)
+	if main != null and main.has_method("_notify"):
+		main.call("_notify", msg)
+	else:
+		push_warning("[topdown] " + msg)
 
 func _build_npcs() -> void:
 	var ys := get_node_or_null("YSortLayer") as Node2D
@@ -130,6 +201,8 @@ func _build_monsters() -> void:
 		node.set("idle_min", float(m.get("idle_min", 3.0)))
 		node.set("idle_max", float(m.get("idle_max", 4.0)))
 		node.set("move_time", float(m.get("move_time", 1.0)))
+		# 击杀后原区重刷间隔（V1.43）。
+		node.set("respawn_seconds", float(m.get("respawn", 30.0)))
 		# V1.41 明雷接触开战：仅在主流程（有 Main 节点）时生效，独立试点不触发。
 		node.set("battle_monster", str(m.get("battle_monster", "")))
 		ys.add_child(node)
@@ -181,7 +254,7 @@ func _refresh_hint() -> void:
 	var p := get_node_or_null("YSortLayer/Player") as CharacterBody2D
 	var xy := p.position if p != null else Vector2.ZERO
 	if _in_main:
-		_hint.text = "WASD 移动 | E 对话 | 左键点按 | 坐标 (%d, %d)" % [int(xy.x), int(xy.y)]
+		_hint.text = "WASD 移动 | E 对话 / 进入 | 左键点按 | 坐标 (%d, %d)" % [int(xy.x), int(xy.y)]
 		return
 	var label := str(logic.get("map_label", "清河村 · 2.5D 斜俯视"))
 	var z := float(logic.get("camera", {}).get("zoom", 1.6))

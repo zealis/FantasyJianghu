@@ -33,7 +33,8 @@ func packTestConfig(t *testing.T) string {
 "scene_capacity":{"town":50,"wild":30,"sect":30,"activity":30},
 "factions":["断岳剑宗","破军枪府","惊雷殿","璇玑星宫","缚灵符观","织梦谷","金刚禅院","玄水宫"]}`
 	scene := `{"map_id":"清河村","type":"town","width":2352,"height":1008,"ground_y":900,
-"walk":{"x_min":80,"x_max":2272},"npcs":[{"id":"hebo","name":"何伯","x":1560,"dialogue":"d1"}]}`
+"walk":{"x_min":80,"x_max":2272},"npcs":[{"id":"hebo","name":"何伯","x":1560,"dialogue":"d1"}],
+"portals":[{"id":"field_gate","name":"清河村野外","x":468,"y":900,"to_x":1500,"to_y":700}]}`
 	if err := os.WriteFile(filepath.Join(src, "app.json"), []byte(app), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -327,6 +328,51 @@ func validFactionsJSON() string {
 {"name":"金刚禅院","category":"肉盾","color":"绿","residence":"望月城·临海古刹","weapon":"杖","feature":"护盾、反伤与嘲讽聚火，越挨打越硬","secret":"《金刚不坏体》"},
 {"name":"玄水宫","category":"肉盾","color":"绿","residence":"蓬莱岛·水府","weapon":"杖","feature":"减伤光环与持续治疗，能扛能奶的续航坦克","secret":"《玄水真经》"}
 ]`
+}
+
+// TestTeleportOverWS 用真实生产装配验证 3/9 传送点交互：
+// 落点取服务端场景配置、非法 id 被拒、离场重进仍是传送落点（已落盘）。
+func TestTeleportOverWS(t *testing.T) {
+	base, _ := startServer(t)
+	_ = apiPost(t, base, "/api/register", `{"username":"传送探针","password":"123456","nickname":"传送探针昵"}`)
+	login := apiPost(t, base, "/api/login", `{"username":"传送探针","password":"123456"}`)
+	token := login["data"].(map[string]any)["token"].(string)
+	ws := dialWS(t, base)
+	send(t, ws, 2, 1, 1, map[string]any{"token": token})
+	expectCode(t, recv(t, ws, 3*time.Second), 1, 0, "鉴权")
+	send(t, ws, 2, 2, 2, map[string]any{"name": "传送探针侠", "faction": "惊雷殿", "gender": "男"})
+	f := recv(t, ws, 3*time.Second)
+	expectCode(t, f, 2, 0, "创角")
+	cid := asID(f.Payload["char"].(map[string]any)["id"])
+	send(t, ws, 2, 3, 3, map[string]any{"char_id": float64(cid)})
+	expectCode(t, recv(t, ws, 3*time.Second), 3, 0, "选角")
+	send(t, ws, 3, 1, 4, map[string]any{"map_id": "清河村"})
+	expectCode(t, recv(t, ws, 3*time.Second), 4, 0, "进场")
+
+	// 夹带伪造坐标也必须被忽略，落点只认服务端配置。
+	send(t, ws, 3, protocol.SubTeleport, 5, map[string]any{
+		"portal_id": "field_gate", "x": float64(1), "y": float64(1)})
+	f = recv(t, ws, 3*time.Second)
+	expectCode(t, f, 5, 0, "传送")
+	if f.Payload["x"] != float64(1500) || f.Payload["y"] != float64(700) {
+		t.Fatalf("传送落点未取服务端配置: %+v", f.Payload)
+	}
+	// 未知传送点不得受理。
+	send(t, ws, 3, protocol.SubTeleport, 6, map[string]any{"portal_id": "not_exist"})
+	f = recv(t, ws, 3*time.Second)
+	if f.Payload["code"] == float64(0) {
+		t.Fatal("未知传送点竟被受理")
+	}
+	// 离场落盘后重进，位置仍是传送落点。
+	send(t, ws, 3, 4, 7, map[string]any{})
+	expectCode(t, recv(t, ws, 3*time.Second), 7, 0, "离场")
+	send(t, ws, 3, 1, 8, map[string]any{"map_id": "清河村"})
+	f = recv(t, ws, 3*time.Second)
+	expectCode(t, f, 8, 0, "重进")
+	self := f.Payload["self"].(map[string]any)
+	if self["x"] != float64(1500) || self["y"] != float64(700) {
+		t.Fatalf("传送未落盘: 重进 self=%+v", self)
+	}
 }
 
 func TestLineIntegration(t *testing.T) {

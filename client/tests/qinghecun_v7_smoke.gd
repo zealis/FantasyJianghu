@@ -40,8 +40,8 @@ func _ready() -> void:
 			return _fail("碰撞 kind 不符: %s" % str(c.get_meta("kind", "")))
 
 	var doors: Node = w.get_node_or_null("Interactions")
-	if doors == null or doors.get_child_count() != 3:
-		return _fail("门洞交互热区数量不符")
+	if doors == null or doors.get_child_count() != 4:
+		return _fail("交互热区数量不符（应 3 门洞 + 1 传送点）")
 	var ys: Node2D = w.get_node_or_null("YSortLayer") as Node2D
 	if ys == null or not ys.y_sort_enabled:
 		return _fail("精灵间 Y-Sort 未启用")

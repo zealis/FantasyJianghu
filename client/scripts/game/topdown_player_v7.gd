@@ -112,8 +112,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 		_target = Vector2.INF
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
-		# 承接横版 player.gd：靠近 NPC 时 E 触发对话（俯视 NPC 写入 near_npc_id）。
-		if WorldStore.near_npc_id != "":
+		# 交互焦点：门洞/传送点优先，其次 NPC 对话（横版 player.gd 口径）。
+		if WorldStore.near_hotspot != "":
+			WorldStore.request_hotspot(WorldStore.near_hotspot)
+		elif WorldStore.near_npc_id != "":
 			WorldStore.request_dialogue(WorldStore.near_npc_id)
 
 func _physics_process(delta: float) -> void:
@@ -158,6 +160,14 @@ func _report_move(delta: float) -> void:
 	if _last_sent == Vector2.INF or global_position.distance_to(_last_sent) > 0.5:
 		_last_sent = global_position
 		Network.send(3, 2, {"x": global_position.x, "y": global_position.y})
+
+## 3/9 传送成功后由 world 调用：把「上次上报」对齐到服务端权威落点，
+## 否则下一帧 3/2 上报会被防瞬移判定为超速并把人物拉回传送前位置。
+func on_teleported(pos: Vector2) -> void:
+	global_position = pos
+	_target = Vector2.INF
+	_last_sent = pos
+	velocity = Vector2.ZERO
 
 ## 3/2 权威回包：二维偏差超容忍才纠偏；回包等于自己上次上报则视为确认。
 func _on_packet(main_code: int, sub_code: int, payload: Dictionary) -> void:

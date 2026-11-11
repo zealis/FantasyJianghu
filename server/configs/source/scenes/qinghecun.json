@@ -78,10 +78,54 @@
           }
         ]
       }
+    ],
+    "door_dazhai": [
+      {
+        "speaker": "村中大宅",
+        "text": "门扉虚掩，堂前落了薄灰。桌上还摆着未收的茶盏，像是主人匆匆离席。"
+      },
+      {
+        "speaker": "村中大宅",
+        "text": "后院通向地窖的木梯隐在暗处。",
+        "options": [
+          {
+            "text": "下地窖看看",
+            "action": "toast:地窖场景尚未开放"
+          },
+          {
+            "text": "退出",
+            "action": ""
+          }
+        ]
+      }
+    ],
+    "door_dongtian": [
+      {
+        "speaker": "东田小院",
+        "text": "院里晒着药草，竹篱外是成片的稻田。屋主不在，只留一壶凉茶。"
+      }
+    ],
+    "door_nanshe": [
+      {
+        "speaker": "南舍",
+        "text": "低矮的土屋，灶台尚有余温。墙上挂着一件旧蓑衣。"
+      }
     ]
   },
   "type": "town",
   "spawn_x": 950,
   "spawn_y": 780,
-  "legacy_ground_y": 900
+  "legacy_ground_y": 900,
+  "portals": [
+    {
+      "id": "field_gate",
+      "name": "清河村野外",
+      "x": 468,
+      "y": 972,
+      "to_x": 1500,
+      "to_y": 700,
+      "target_map": "",
+      "note": "独立野外场景尚未出图；当前按同图定点传送承载，target_map 为将来换图预留。"
+    }
+  ]
 }

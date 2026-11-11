@@ -80,15 +80,22 @@ func _open(npc_id: String) -> void:
 	_npc_id = npc_id
 	var logic := SceneLogic.get_logic()
 	var key := ""
+	var is_npc := false
 	for n in logic.get("npcs", []):
 		if n.get("id") == npc_id:
 			key = String(n.get("dialogue", ""))
+			is_npc = true
+			break
+	# 门洞 / 场所热区直接按 dialogue key 打开（不是 NPC，不发 10/1 talk 记账）。
+	if not is_npc:
+		key = npc_id
 	_lines = logic.get("dialogues", {}).get(key, [])
 	_index = 0
 	visible = true
 	_show_line()
 	_refresh_quest_options()
-	_sync_talk(npc_id)
+	if is_npc:
+		_sync_talk(npc_id)
 
 ## 对话即向服务端记账（10/1）：推进 talk 类任务目标，并刷新任务状态。
 func _sync_talk(npc_id: String) -> void:

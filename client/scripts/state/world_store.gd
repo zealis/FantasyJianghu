@@ -3,6 +3,8 @@ extends Node
 ## 位置广播/远端玩家来自服务端推送（3/3 移动广播、3/6 加入、3/5 离场）。
 
 signal dialogue_requested(npc_id: String)
+## 俯视交互热区（门洞 / 传送点）：同一时刻最多一个最近热点，E 键优先于 NPC 对话。
+signal hotspot_requested(hotspot_id: String)
 signal near_npc_changed(npc_id: String)
 signal snapshot_applied
 signal remote_changed
@@ -10,6 +12,7 @@ signal remote_changed
 var current_map: String = "清河村"
 var map_peace: bool = true
 var near_npc_id: String = ""
+var near_hotspot: String = ""
 # 进场快照（服务端权威）：本人出生位置与场景逻辑数据。
 var self_x: float = 400.0
 var self_y: float = 900.0
@@ -106,6 +109,16 @@ func clear_near_npc(npc_id: String) -> void:
 
 func request_dialogue(npc_id: String) -> void:
 	dialogue_requested.emit(npc_id)
+
+func set_near_hotspot(hotspot_id: String) -> void:
+	near_hotspot = hotspot_id
+
+func clear_near_hotspot(hotspot_id: String) -> void:
+	if near_hotspot == hotspot_id:
+		near_hotspot = ""
+
+func request_hotspot(hotspot_id: String) -> void:
+	hotspot_requested.emit(hotspot_id)
 
 func location_banner() -> String:
 	return "%s · %s" % [current_map, "和平" if map_peace else "战斗"]
